@@ -1,8 +1,8 @@
-# trollnames
+# codemafia
 
 ## How to Play
 
-trollnames is a take on the game of Codenames, in which teams compete to the guess the coloured words indicated by their "spymaster". In this variant, however, each team has a "troll" that can see the other team's words as well as the black word. Their objective is to sabotage their own team's attempts to guess correctly.
+codemafia is a take on the game of Codenames, in which teams compete to the guess the coloured words indicated by their "spymaster". In this variant, however, each team has a "troll" that can see the other team's words as well as the black word. Their objective is to sabotage their own team's attempts to guess correctly.
 
 ## Architecture
 
