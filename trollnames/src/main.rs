@@ -29,6 +29,8 @@ use std::ops::ControlFlow;
 use std::borrow::Cow;
 
 mod wordbank;
+mod manager;
+mod server;
 
 #[tokio::main]
 async fn main() {

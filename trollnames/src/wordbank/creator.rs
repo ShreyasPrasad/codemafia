@@ -1,4 +1,4 @@
-/** Creator
+/* Creator
   
  This module reads word lists to assemble an in memory list of words that can be used in 
  new codenames games. It creates a buffer of games that is replenished when it is emptied
@@ -41,7 +41,7 @@ pub enum CreatorError {
 impl fmt::Display for CreatorError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::NotEnoughWords => write!(f, "Not enough number of words were read.")
+            Self::NotEnoughWords => write!(f, "Not enough words were read.")
         }   
     }
 }

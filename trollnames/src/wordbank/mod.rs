@@ -1,4 +1,4 @@
-/** WordBank
+/* WordBank
   
  The WordBank module is reponsible for generating 25 words that can constitute a valid codenames game.
  It assembles a complete list of words in memory and uses them to assemble valid codenames games upon
