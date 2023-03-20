@@ -1,61 +1,66 @@
-/* Manager
+/* 
+    Manager
 
- This module contains the logic that handles game creation and routing. Newly created
- games are stored in memory, accessible to clients by a generated game code that
- the original game creator distributes.
+    This module contains the logic that handles game room creation and routing
+    to these rooms using game codes, all in a single struct.
 
- */
+    This struct is thread-safe; clients can safely perform operations like
+    game creation and removal concurrently.
 
-use std::collections::HashMap;
-use tokio::sync::mpsc;
-use super::server::Action;
+*/
+
+use std::sync::Arc;
+use dashmap::DashMap;
 use rand::{Rng, rngs::ThreadRng}; // 0.8
+
+pub mod room;
+
+use self::room::Room;
 
 /* A message buffer size of 64 should be more than sufficient as messages are handled as soon as they 
    appear from, from at most 10-12 players. */
 const MSPC_BUFFER_SIZE: usize = 64;
 
 /* Constants used to define the RNG that generates game codes that are distributed to player. */
-const GAME_CODE_CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const GAME_CODE_LEN: usize = 4;
+const ROOM_CODE_CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const ROOM_CODE_LEN: usize = 4;
 
-pub struct GameManager {
-    games: HashMap<String, GameChannel>
+pub struct RoomManager {
+    rooms: Arc<DashMap<RoomCode, Room>>,
 }
 
-type GameChannel = mpsc::Sender<Action>;
+// Create a convenience aliasing type
+type RoomCode = String;
 
-impl GameManager {
-    /* Invoked when a game creation request is made. */
-    pub fn create_game(&mut self){
-        let (tx, mut rx) = mpsc::channel::<Action>(MSPC_BUFFER_SIZE);
-        /* Add the game to the manager so at least one reference to the Sender exists (and thus receiver is not dropped). */
-        self.games.insert(self.get_game_code(), tx);
-        tokio::spawn(async move {
-            
-        });
+impl RoomManager {
+    pub fn new(self) -> Self {
+        RoomManager {
+            rooms: Arc::new(DashMap::<RoomCode, Room>::new()),
+        }
     }
-
-    pub fn add_player(self){
-        
+    /* Invoked when a room creation request is made. */
+    pub fn create_room(&mut self){
+        /* Add the room to the manager so at least one reference to the Sender exists (and thus receiver is not dropped). */
+        self.rooms.insert(self.get_room_code(), Room::new());
     }
 
     /* Invoked by a game when it is completed and should be cleaned up from within the manager. */
-    pub fn remove_game(&mut self, game_code: String){
+    pub fn remove_room(&mut self, game_code: String){
         /* Removing the game from the map kills the Tokio game server task since mspc::Sender ref count reaches 0. */
-        self.games.remove(&game_code);
+        self.rooms.remove(&game_code);
     }
 
-    fn get_game_code(&self) -> String {
+    fn get_room_code(&self) -> RoomCode {
+        /* Currently, conflicting game codes are not handled; they have a negligible chance of occuring. */
         let mut rng: ThreadRng = rand::thread_rng();
 
-        let game_code: String = (0..GAME_CODE_LEN)
+        let room_code: String = (0..ROOM_CODE_LEN)
             .map(|_| {
-                let idx: usize = rng.gen_range(0..GAME_CODE_CHARSET.len());
-                GAME_CODE_CHARSET[idx] as char
+                let idx: usize = rng.gen_range(0..ROOM_CODE_CHARSET.len());
+                ROOM_CODE_CHARSET[idx] as char
             })
             .collect();
 
-        game_code
+        room_code
     }
 }

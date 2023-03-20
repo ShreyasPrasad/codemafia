@@ -30,7 +30,8 @@ use std::borrow::Cow;
 
 mod wordbank;
 mod manager;
-mod server;
+mod game;
+mod player;
 
 #[tokio::main]
 async fn main() {

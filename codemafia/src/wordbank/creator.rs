@@ -1,18 +1,12 @@
 /* Creator
   
  This module reads word lists to assemble an in memory list of words that can be used in 
- new codenames games. It creates a buffer of games that is replenished when it is emptied
- by the caller.
+ new codemafia games. 
 
- TODO: Make the replenishment of this game buffer asynchronous after a certain threshold number
- of games is reached. Otherwise, the caller that obtains the last buffered Game incurs a penalty
- to calculate the next buffer for other callers; this is not ideal.
- 
  */
 
 
 use super::*;
-use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{prelude::*, BufReader};
 use std::collections::HashSet;
@@ -28,7 +22,6 @@ const WORD_FILES: [&'static str; 1] = ["wordlist"];
 
 pub struct Creator {
     all_words: Vec<String>,
-    game_buffer: VecDeque<Game>,
     rng: ChaCha20Rng  // use ChaCha20Rng since it implements Send+Sync
 }
 
@@ -53,7 +46,6 @@ impl Creator {
             Ok(word_list) => 
                 Ok(Creator {
                     all_words: word_list,
-                    game_buffer: VecDeque::new(),
                     rng: ChaCha20Rng::from_entropy()
                 }
             ),
@@ -61,20 +53,7 @@ impl Creator {
         }
     }
 
-    pub fn get_game (&mut self) -> Game {
-        if self.game_buffer.is_empty() {
-            self.populate_buffer();
-        }
-        self.game_buffer.pop_front().unwrap()
-    }
-
-    fn populate_buffer(&mut self) {
-        for _i in 1..GAME_BUFFER_SIZE {
-            self.add_game_to_buffer();
-        }
-    }
-
-    fn add_game_to_buffer (&mut self) {
+    pub fn get_game(&mut self) -> Game {
         let sample: Vec<&String> = self.all_words.choose_multiple (
             &mut self.rng, 
             NUMBER_OF_WORDS_IN_GAME
@@ -103,14 +82,12 @@ impl Creator {
             match index + 1 {
                 1..=8 => word.word_type = WordType::Blue,
                 9..=18 => word.word_type = WordType::Red,
-                19..=19 => word.word_type = WordType::BlackBlue,
-                20..=20 => word.word_type = WordType::Blue,
+                19..=19 => word.word_type = WordType::Black,
                 _ => ()
             }
         }
         
-        // add the newly created game to the buffer
-        self.game_buffer.push_back(Game { board: Board { words: game_words } });
+        return Game { board: Board { words: game_words } };
     }
 
     fn get_all_words() -> Result<Vec<String>, CreatorError> {
