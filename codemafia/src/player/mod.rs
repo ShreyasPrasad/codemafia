@@ -3,41 +3,39 @@
  
     Encapsulates basic active player fields with several generic fields
     for custom player implementations.
-
 */
 
 use std::hash::{Hash, Hasher};
 
 pub mod connection;
 
-use axum::extract::ws::WebSocket;
-use crate::player::connection::Connection;
+use crate::{player::connection::Connection, game::event::EventSender};
 
 pub struct Player {
     /* The player's communication channel.  */
     channel: PlayerChannel,
     /* The player's role. */
-    role: Option<Box<dyn Role>>,
+    profile: Option<Box<dyn Profile + Send + Sync>>,
     /* The player's self-assigned name. */
     name: Option<String>
 }
 
 pub struct PlayerChannel {
-    socket: WebSocket,
+    socket_receiver: EventSender,
     connection: Connection
 }
 
-/* Trait that designates a player's role; this can be used for whatever 
-purpose the game requires; in our case it will store the game's roles. */
-pub trait Role {
+/* Trait that designates a player's profile; this can be used for whatever 
+purpose the game requires; in our case it will store the player's name and role. */
+pub trait Profile {
     fn get_role_str(&self) -> String;
 }
 
 impl Player {
-    pub fn new(name: String, socket: WebSocket, connection: Connection) -> Self {
+    pub fn new(name: String, socket_receiver: EventSender, connection: Connection) -> Self {
         Player {
-            channel: PlayerChannel { socket, connection },
-            role: None,
+            channel: PlayerChannel { socket_receiver, connection },
+            profile: None,
             name: Some(name)
         }
     }

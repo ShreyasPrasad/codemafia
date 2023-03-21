@@ -1,15 +1,15 @@
-/* Server
+/* 
+    Game
 
- This module contains the logic for game completion itself, along with the necessary structures
- that encapsulate game actions and outcomes.
-
- */
+    This module contains the logic for game completion itself, along with the necessary structures
+    that encapsulate game actions and outcomes.
+*/
 
 pub mod server;
 pub mod event;
 
 #[derive(Debug)]
-pub enum Action {
+pub enum Message {
     Chat(ChatAction),
     Game(GameAction)
 }

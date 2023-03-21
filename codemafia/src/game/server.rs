@@ -1,15 +1,15 @@
-/* Game
+/* 
+    Server
  
- Contains the Tokio task that runs the primary game loop.
-
- */
+    Contains the Tokio task that runs the primary game loop.
+*/
 
 use tokio::sync::mpsc::{Receiver};
 use tokio::sync::oneshot;
 
 use crate::wordbank::Game;
 
-use super::Action;
+use super::Message;
 use super::event::Event;
 use tokio::sync::mpsc;
 
@@ -19,7 +19,7 @@ pub struct GameServer {
 }
 
 impl GameServer {
-    pub async fn game_loop(&mut self, mut rx: Receiver<Action>) {
+    pub async fn game_loop(&mut self, mut rx: Receiver<Message>) {
         while let Some(cmd) = rx.recv().await {
             
         }

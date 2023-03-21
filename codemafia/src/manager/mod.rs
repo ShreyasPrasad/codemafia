@@ -17,16 +17,12 @@ pub mod room;
 
 use self::room::Room;
 
-/* A message buffer size of 64 should be more than sufficient as messages are handled as soon as they 
-   appear from, from at most 10-12 players. */
-const MSPC_BUFFER_SIZE: usize = 64;
-
 /* Constants used to define the RNG that generates game codes that are distributed to player. */
 const ROOM_CODE_CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const ROOM_CODE_LEN: usize = 4;
 
 pub struct RoomManager {
-    rooms: Arc<DashMap<RoomCode, Room>>,
+    rooms: DashMap<RoomCode, Room>,
 }
 
 // Create a convenience aliasing type
@@ -35,7 +31,7 @@ type RoomCode = String;
 impl RoomManager {
     pub fn new(self) -> Self {
         RoomManager {
-            rooms: Arc::new(DashMap::<RoomCode, Room>::new()),
+            rooms: DashMap::<RoomCode, Room>::new(),
         }
     }
     /* Invoked when a room creation request is made. */
