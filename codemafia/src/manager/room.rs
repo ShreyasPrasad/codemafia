@@ -14,16 +14,16 @@ use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
 use tokio::sync::mpsc::Receiver;
 
-/* These are aliases for the room listener and ; this is the channel that all players send their actions to.  */
-type RoomSender = Sender<Message>;
-type RoomReceiver = Receiver<Message>;
+/* These are aliases for the room listener and receiver; this is the channel that all players send their actions to.  */
+pub type RoomSender = Sender<Message>;
+pub type RoomReceiver = Receiver<Message>;
 
 /* A message buffer size of 64 should be more than sufficient as messages are handled as soon as they 
    appear from, from at most 10-12 players. */
 const MSPC_BUFFER_SIZE: usize = 64;
 
 pub struct Room {
-    /* The active players in the room. */
+    /* The clonable sender that the RoomController listens to; available to clients using get_room_sender() below. */
     sender: RoomSender
 }
 
@@ -35,14 +35,13 @@ impl Room {
             let controller: RoomController = RoomController { players: HashSet::new() };
             while let Some(message) = rx.recv().await {
                 controller.handle_message(message);
-
             }
         });
         Room { sender: tx }
     }
 
-    pub fn get_room_sender_channel(&self) -> RoomSender {
-        /* Return a clone of the room sender so the new player can send messages. */
+    pub fn get_room_sender(&self) -> RoomSender {
+        /* Return a clone of the room sender so the new client can send messages. */
         self.sender.clone()
     }
 }

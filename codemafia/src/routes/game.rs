@@ -1,9 +1,9 @@
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
-        TypedHeader,
+        TypedHeader, Path, State,
     },
-    response::IntoResponse,
+    response::IntoResponse, http::StatusCode,
 };
 
 //allows to extract the IP of connecting user
@@ -13,35 +13,60 @@ use axum::extract::ws::CloseFrame;
 //allows to split the websocket stream into separate TX and RX branches
 use futures::{sink::SinkExt, stream::StreamExt};
 
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
 //import required traits
 use std::ops::ControlFlow;
 use std::borrow::Cow;
+
+use crate::manager::{RoomCode, room::RoomSender};
+
+use super::AppState;
 
 /// The handler for the HTTP request (this gets called when the HTTP GET lands at the start
 /// of websocket negotiation). After this completes, the actual switching from HTTP to
 /// websocket protocol will occur.
 /// This is the last point where we can extract TCP/IP metadata such as IP address of the client
 /// as well as things from HTTP headers such as user-agent of the browser etc.
-pub async fn ws_handler(
+pub async fn game_route_handler(
+    Path(code): Path<RoomCode>, /* The room code the client is attempting to connect to. */
     ws: WebSocketUpgrade,
     user_agent: Option<TypedHeader<headers::UserAgent>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
     let user_agent = if let Some(TypedHeader(user_agent)) = user_agent {
         user_agent.to_string()
     } else {
         String::from("Unknown browser")
     };
+    // log the new incoming connection
     println!("`{}` at {} connected.", user_agent, addr.to_string());
-    // finalize the upgrade process by returning upgrade callback.
-    // we can customize the callback by sending additional info such as address.
-    ws.on_upgrade(move |socket| handle_socket(socket, addr))
+
+    // check if the game exists
+    let mut room_handle: Option<RoomSender> = None;
+    {
+        match state.manager.read() {
+            Ok(manager_lock) => {
+                room_handle = manager_lock.get_room_handle(code)
+            },
+            Err(err) => {
+                println!("Error encountered when acquiring manager RwLock in read mode: {}", err);
+            } 
+        }
+    }
+
+    /* Check if the room exists. */
+    match room_handle {
+        /* If the room exists, upgrade the websocket connection. */
+        Some(sender) => ws.on_upgrade(
+            move |socket| handle_socket(socket, addr, sender)),
+        None => (StatusCode::NOT_FOUND, "Room not found.").into_response()
+    }
 }
 
 /// Actual websocket statemachine (one will be spawned per connection)
-async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
+async fn handle_socket(mut socket: WebSocket, who: SocketAddr, event_sender: RoomSender) {
     //send initial ping (unsupported by some browsers) just to kick things off and get a response
     if let Ok(_) = socket.send(Message::Ping(vec![1, 2, 3])).await {
         println!("Pinged {}...", who);

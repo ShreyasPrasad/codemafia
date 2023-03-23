@@ -11,6 +11,7 @@ pub mod event;
 #[derive(Debug)]
 pub enum Message {
     Chat(ChatAction),
+    Room(RoomAction),
     Game(GameAction)
 }
 
@@ -18,6 +19,16 @@ pub enum Message {
 pub struct ChatAction {
     text: String,
     recipient: u32
+}
+
+#[derive(Debug)]
+pub struct RoomAction {
+    action_type: RoomActionType
+}
+
+#[derive(Debug)]
+pub enum RoomActionType {
+
 }
 
 #[derive(Debug)]

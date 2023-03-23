@@ -4,46 +4,52 @@
     This module contains the logic that handles game room creation and routing
     to these rooms using game codes, all in a single struct.
 
-    This struct is thread-safe; clients can safely perform operations like
-    game creation and removal concurrently.
-
+    This struct is not thread-safe; clients should ensure the RoomManager can be
+    invoked concurrently to ensure parallel game creation.
 */
 
-use std::sync::Arc;
-use dashmap::DashMap;
+use std::collections::HashMap;
 use rand::{Rng, rngs::ThreadRng}; // 0.8
 
 pub mod room;
 
-use self::room::Room;
+use crate::manager::room::{Room, RoomSender};
 
 /* Constants used to define the RNG that generates game codes that are distributed to player. */
 const ROOM_CODE_CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const ROOM_CODE_LEN: usize = 4;
 
 pub struct RoomManager {
-    rooms: DashMap<RoomCode, Room>,
+    rooms: HashMap<RoomCode, Room>,
 }
 
 // Create a convenience aliasing type
-type RoomCode = String;
+pub type RoomCode = String;
 
 impl RoomManager {
-    pub fn new(self) -> Self {
+    pub fn new() -> Self {
         RoomManager {
-            rooms: DashMap::<RoomCode, Room>::new(),
+            rooms: HashMap::<RoomCode, Room>::new(),
         }
     }
     /* Invoked when a room creation request is made. */
-    pub fn create_room(&mut self){
-        /* Add the room to the manager so at least one reference to the Sender exists (and thus receiver is not dropped). */
-        self.rooms.insert(self.get_room_code(), Room::new());
+    pub fn create_room(&mut self) -> RoomCode {
+        let new_room_code: RoomCode = self.get_room_code();
+        self.rooms.insert(new_room_code.clone(), Room::new());
+        new_room_code
     }
 
     /* Invoked by a game when it is completed and should be cleaned up from within the manager. */
-    pub fn remove_room(&mut self, game_code: String){
-        /* Removing the game from the map kills the Tokio game server task since mspc::Sender ref count reaches 0. */
-        self.rooms.remove(&game_code);
+    pub fn remove_room(&mut self, room_code: RoomCode){
+        self.rooms.remove(&room_code);
+    }
+
+    /* Invoked to obtain the RoomSender for a particular game room; returns None if the room doesn't exist. */
+    pub fn get_room_handle(&self, room_code: RoomCode) -> Option<RoomSender> {
+        match self.rooms.get(&room_code) {
+            Some(room) => Some(room.get_room_sender()),
+            None => None
+        }
     }
 
     fn get_room_code(&self) -> RoomCode {

@@ -21,7 +21,7 @@ pub struct Player {
 }
 
 pub struct PlayerChannel {
-    socket_receiver: EventSender,
+    event_sender: EventSender,
     connection: Connection
 }
 
@@ -29,18 +29,20 @@ pub struct PlayerChannel {
 purpose the game requires; in our case it will store the player's name and role. */
 pub trait Profile {
     fn get_role_str(&self) -> String;
+    fn get_name_str(&self) -> String;
 }
 
 impl Player {
-    pub fn new(name: String, socket_receiver: EventSender, connection: Connection) -> Self {
+    pub fn new(name: String, event_sender: EventSender, connection: Connection) -> Self {
         Player {
-            channel: PlayerChannel { socket_receiver, connection },
+            channel: PlayerChannel { event_sender, connection },
             profile: None,
             name: Some(name)
         }
     }
 }
 
+/* Blanket Eq impl for Player. */
 impl Eq for Player {}
 
 /* Allow Player to be used in hash-based datastructures like HashSet, using the 
