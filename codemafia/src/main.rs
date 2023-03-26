@@ -7,6 +7,8 @@ mod manager;
 mod game;
 mod player;
 mod routes;
+mod messages;
+mod events;
 
 use crate::routes::build_routes;
 

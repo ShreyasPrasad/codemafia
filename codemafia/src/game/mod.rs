@@ -1,52 +1,29 @@
 /* 
     Game
 
-    This module contains the logic for game completion itself, along with the necessary structures
-    that encapsulate game actions and outcomes.
+    This module contains the logic for game completion itself, using the actions and
+    events defined in mod actions and mod events respectively.
 */
 
-pub mod server;
-pub mod event;
+use tokio::sync::mpsc::{Receiver};
+use tokio::sync::oneshot;
 
-#[derive(Debug)]
-pub enum Message {
-    Chat(ChatAction),
-    Room(RoomAction),
-    Game(GameAction)
+use crate::manager::room::RoomToGameBridge;
+use crate::wordbank::Game;
+
+pub struct GameServer {
+    /* The owned, generated game. */
+    game: Game,
+    bridge: RoomToGameBridge
 }
 
-#[derive(Debug)]
-pub struct ChatAction {
-    text: String,
-    recipient: u32
-}
-
-#[derive(Debug)]
-pub struct RoomAction {
-    action_type: RoomActionType
-}
-
-#[derive(Debug)]
-pub enum RoomActionType {
-
-}
-
-#[derive(Debug)]
-pub struct GameAction {
-    action_type: GameActionType,
-}
-
-#[derive(Debug)]
-pub enum GameActionType {
-    WordSuggested(String /* The word that was suggested */),
-    WordClicked(u8 /* The index of the word that was clicked */),
-    SpyMasterVoteInitiated,
-    EndTurn,
-    TeamSelected(Team)
-}
-
-#[derive(Debug)]
-pub enum Team {
-    Blue,
-    Red
+impl GameServer {
+    pub fn new(game: Game, bridge: RoomToGameBridge) -> Self {
+        GameServer { game, bridge }
+    }
+    pub async fn game_loop(&mut self) {
+        while let Some(cmd) = self.bridge.game_channel.recv().await {
+            
+        }
+    }
 }

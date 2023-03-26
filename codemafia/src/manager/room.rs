@@ -1,14 +1,19 @@
 /*
     Room
 
-    This module contains the struct that organizes players (see mod player) into a single group, allowing
+    This module contains the struct that organizes players (see mod player) into a single group, enabling
     broadcast communication. Access to this struct is not thread-safe and should be made synchronous
     using some concurrency primitive (see the use of Dashmap in mod.rs).
 */
 
-use crate::game::Message;
-use crate::{player::Player, game::server::GameServer};
-use std::collections::HashSet;
+use crate::events::EventSender;
+use crate::messages::Message;
+use crate::messages::chat::ChatMessage;
+use crate::messages::game::GameMessage;
+use crate::messages::room::RoomMessage;
+use crate::player::connection::Connection;
+use crate::{player::Player, game::GameServer};
+use std::collections::{HashSet, HashMap};
 
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
@@ -32,7 +37,7 @@ impl Room {
     pub fn new() -> Self {
         let (tx, mut rx) = mpsc::channel::<Message>(MSPC_BUFFER_SIZE);
         tokio::spawn(async move {
-            let controller: RoomController = RoomController { players: HashSet::new() };
+            let controller: RoomController = RoomController { players: HashMap::new(), owner: None };
             while let Some(message) = rx.recv().await {
                 controller.handle_message(message);
             }
@@ -49,11 +54,35 @@ impl Room {
 /* This struct is responisble for handling room-specific messages sent by players. To see what types of
 messages it handles, look at the match statement below. */
 pub struct RoomController {
-    players: HashSet<Player>
+    players: HashMap<Connection, Player>,
+    owner: Option<String>
+}
+
+/* This struct enables bidrectional communication between the room and the game using message passing.
+The benefit of this approach is that game server logic and player/room management are not coupled (SOC). */
+pub struct RoomToGameBridge {
+    pub game_channel: Receiver<GameMessage>,
+    pub room_channel: EventSender
 }
 
 impl RoomController {
     pub fn handle_message(&self, message: Message) {
+        match message {
+            Message::Chat(chat_message) => self.handle_chat_message(chat_message),
+            Message::Game(game_message) => self.handle_game_message(game_message),
+            Message::Room(room_message) => self.handle_room_message(room_message)
+        }
+    }
+
+    fn handle_chat_message(&self, message: ChatMessage){
+
+    }
+
+    fn handle_game_message(&self, message: GameMessage){
+
+    }
+
+    fn handle_room_message(&self, message: RoomMessage){
 
     }
 }

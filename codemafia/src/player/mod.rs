@@ -9,7 +9,7 @@ use std::hash::{Hash, Hasher};
 
 pub mod connection;
 
-use crate::{player::connection::Connection, game::event::EventSender};
+use crate::{player::connection::Connection, events::EventSender, };
 
 pub struct Player {
     /* The player's communication channel.  */
@@ -45,8 +45,8 @@ impl Player {
 /* Blanket Eq impl for Player. */
 impl Eq for Player {}
 
-/* Allow Player to be used in hash-based datastructures like HashSet, using the 
-underlying Connection. */ 
+/* Allow Player to be used in hash-based data structures like HashSet, using the 
+underlying Connection as the key (this may change to a UUID-based system in the future). */ 
 impl PartialEq for Player {
     fn eq(&self, other: &Self) -> bool {
         self.channel.connection == other.channel.connection

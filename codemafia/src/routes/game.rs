@@ -77,20 +77,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, event_sender: Roo
         return;
     }
 
-    // receive single message from a client (we can either receive or send with socket).
-    // this will likely be the Pong for our Ping or a hello message from client.
-    // waiting for message from a client will block this task, but will not block other client's
-    // connections.
-    if let Some(msg) = socket.recv().await {
-        if let Ok(msg) = msg {
-            if process_message(msg, who).is_break() {
-                return;
-            }
-        } else {
-            println!("client {} abruptly disconnected", who);
-            return;
-        }
-    }
+    // pass the current game state to the player, including existing player state if they are reconnecting
 
     // By splitting socket we can send and receive at the same time. In this example we will send
     // unsolicited messages to client based on some sort of server's internal event (i.e .timer).
