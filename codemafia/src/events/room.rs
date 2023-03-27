@@ -3,17 +3,16 @@
 use crate::messages::game::Team;
 
 pub enum RoomEvents {
-    PlayerJoinedTeamEvent(PlayerJoinedTeamEvent),
-    RoomState(RoomState)
+    PlayerJoinedTeam(PlayerOnTeam),
+    RoomState(RoomState),
+    GameStarted
 }
 
-pub struct PlayerJoinedTeamEvent {
+pub struct PlayerOnTeam {
     name: String,
     team: Team
 }
 
 pub struct RoomState {
-    
+    players: Vec<PlayerOnTeam>
 }
-
-

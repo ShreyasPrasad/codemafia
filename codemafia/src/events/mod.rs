@@ -6,23 +6,20 @@
 
 use tokio::sync::oneshot;
 
+use crate::player::role::CodeMafiaRole;
+
 use self::{chat::ChatEvents, game::GameEvents, room::RoomEvents};
 
-pub type EventSender = oneshot::Sender<Event>;
+pub type EventSender = oneshot::Sender<EventContent>;
 
 pub struct Event {
-    recipient: Recipient,
-    content: EventContent
+    pub recipient: Recipient,
+    pub content: EventContent
 }
 
 /* Defines the different recipients of events, in the context of the game.  */
 pub enum Recipient {
-    RedSpymaster,
-    BlueSpymaster,
-    RedUndercover,
-    BlueUnderCover,
-    Red,
-    Blue,
+    SingleRoleList(Vec<CodeMafiaRole>),
     All
 }
 

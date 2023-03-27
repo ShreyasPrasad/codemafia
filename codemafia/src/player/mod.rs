@@ -6,38 +6,39 @@
 */
 
 use std::hash::{Hash, Hasher};
+use uuid::Uuid;
 
-pub mod connection;
+pub mod role;
 
-use crate::{player::connection::Connection, events::EventSender, };
+use crate::events::EventSender;
+
+use self::role::Role;
+
+/* Convenient alias for the player ID. */
+pub type PlayerId = Uuid;
 
 pub struct Player {
-    /* The player's communication channel.  */
-    channel: PlayerChannel,
+    /* The player's unique ID. */
+    pub player_id: PlayerId,
+    /* The channel used to communicate with the player's websocket sender. */
+    pub channel: PlayerChannel,
     /* The player's role. */
-    profile: Option<Box<dyn Profile + Send + Sync>>,
+    pub role: Option<Box<dyn Role + Send + Sync>>,
     /* The player's self-assigned name. */
-    name: Option<String>
+    pub name: Option<String>
 }
 
 pub struct PlayerChannel {
-    event_sender: EventSender,
-    connection: Connection
-}
-
-/* Trait that designates a player's profile; this can be used for whatever 
-purpose the game requires; in our case it will store the player's name and role. */
-pub trait Profile {
-    fn get_role_str(&self) -> String;
-    fn get_name_str(&self) -> String;
+    pub event_sender: EventSender,
 }
 
 impl Player {
-    pub fn new(name: String, event_sender: EventSender, connection: Connection) -> Self {
+    pub fn new(name: String, event_sender: EventSender) -> Self {
         Player {
-            channel: PlayerChannel { event_sender, connection },
-            profile: None,
-            name: Some(name)
+            channel: PlayerChannel { event_sender },
+            role: None,
+            name: Some(name),
+            player_id: Uuid::new_v4()
         }
     }
 }
@@ -46,15 +47,15 @@ impl Player {
 impl Eq for Player {}
 
 /* Allow Player to be used in hash-based data structures like HashSet, using the 
-underlying Connection as the key (this may change to a UUID-based system in the future). */ 
+underlying player ID UUID as the key. */ 
 impl PartialEq for Player {
     fn eq(&self, other: &Self) -> bool {
-        self.channel.connection == other.channel.connection
+        self.player_id == other.player_id
     }
 }
 
 impl Hash for Player {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.channel.connection.hash(state)
+        self.player_id.hash(state)
     }
 }

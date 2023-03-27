@@ -6,14 +6,14 @@
     using some concurrency primitive (see the use of Dashmap in mod.rs).
 */
 
-use crate::events::EventSender;
+use crate::events::{EventSender, Event, Recipient};
 use crate::messages::Message;
 use crate::messages::chat::ChatMessage;
 use crate::messages::game::GameMessage;
 use crate::messages::room::RoomMessage;
-use crate::player::connection::Connection;
+use crate::player::PlayerId;
 use crate::{player::Player, game::GameServer};
-use std::collections::{HashSet, HashMap};
+use std::collections::HashMap;
 
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
@@ -54,8 +54,9 @@ impl Room {
 /* This struct is responisble for handling room-specific messages sent by players. To see what types of
 messages it handles, look at the match statement below. */
 pub struct RoomController {
-    players: HashMap<Connection, Player>,
-    owner: Option<String>
+    players: HashMap<PlayerId, Player>,
+    /* The first player to join the room is assigned owner and is responsible for starting the game. */
+    owner: Option<PlayerId>
 }
 
 /* This struct enables bidrectional communication between the room and the game using message passing.
@@ -84,5 +85,18 @@ impl RoomController {
 
     fn handle_room_message(&self, message: RoomMessage){
 
+    }
+
+    fn dispatch_event(&self, event: Event) {
+        match event.recipient {
+            Recipient::All => {
+                for (_, player) in self.players.iter() {
+                    
+                }
+            },
+            Recipient::SingleRoleList(roles) => {
+
+            }
+        }
     }
 }

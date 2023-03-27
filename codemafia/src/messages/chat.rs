@@ -5,3 +5,4 @@ pub struct ChatMessage {
     text: String,
     recipient: String
 }
+

@@ -1,5 +1,7 @@
 /* Defines a game message and its different actions. */
 
+use std::fmt;
+
 #[derive(Debug)]
 pub struct GameMessage {
     action: GameMessageAction,
@@ -13,8 +15,14 @@ pub enum GameMessageAction {
     EndTurn,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Team {
     Blue,
     Red
+}
+
+impl fmt::Display for Team {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
