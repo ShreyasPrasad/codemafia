@@ -15,7 +15,7 @@ pub enum GameMessageAction {
     EndTurn,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Team {
     Blue,
     Red

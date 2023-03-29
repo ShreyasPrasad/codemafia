@@ -12,7 +12,7 @@ pub mod role;
 
 use crate::events::EventSender;
 
-use self::role::Role;
+use self::role::CodeMafiaRole;
 
 /* Convenient alias for the player ID. */
 pub type PlayerId = Uuid;
@@ -23,7 +23,7 @@ pub struct Player {
     /* The channel used to communicate with the player's websocket sender. */
     pub channel: PlayerChannel,
     /* The player's role. */
-    pub role: Option<Box<dyn Role + Send + Sync>>,
+    pub role: Option<CodeMafiaRole>,
     /* The player's self-assigned name. */
     pub name: Option<String>
 }

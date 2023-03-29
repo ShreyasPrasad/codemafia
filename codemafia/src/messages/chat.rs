@@ -2,7 +2,7 @@
 
 #[derive(Debug)]
 pub struct ChatMessage {
-    text: String,
-    recipient: String
+    pub text: String,
+    pub sender: String
 }
 

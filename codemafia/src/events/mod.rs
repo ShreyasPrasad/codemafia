@@ -4,25 +4,30 @@
     Represents an event that is distributed to one or more players that are in the game.
 */
 
-use tokio::sync::oneshot;
+use tokio::sync::mpsc;
 
-use crate::player::role::CodeMafiaRole;
+use crate::player::{role::CodeMafiaRole, PlayerId};
 
 use self::{chat::ChatEvents, game::GameEvents, room::RoomEvents};
 
-pub type EventSender = oneshot::Sender<EventContent>;
+pub type EventSender = mpsc::Sender<EventContent>;
 
 pub struct Event {
     pub recipient: Recipient,
     pub content: EventContent
 }
 
-/* Defines the different recipients of events, in the context of the game.  */
+/* Defines the different recipients of events. */
 pub enum Recipient {
+    /* Specify the recipients by their game role. */
     SingleRoleList(Vec<CodeMafiaRole>),
+    /* Specify the recipients by their player ID. */
+    SinglePlayerList(Vec<PlayerId>),
+    /* Send to all active players. */
     All
 }
 
+#[derive(Clone)]
 pub enum EventContent {
     Chat(ChatEvents),
     Game(GameEvents),
