@@ -1,6 +1,8 @@
 /* Defines a chat message. */
 
-#[derive(Debug)]
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
 pub struct ChatMessage {
     pub text: String,
     pub sender: String

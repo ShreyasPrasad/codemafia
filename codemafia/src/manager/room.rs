@@ -9,13 +9,16 @@
 use crate::events::chat::{ChatMessageEvent, ChatEvents};
 use crate::events::room::{RoomEvents, RoomState, PlayerOnTeam};
 use crate::events::{EventSender, Event, Recipient, EventContent};
-use crate::messages::Message;
+use crate::messages::internal::InternalMessage;
+use crate::messages::{Message, ClientMessage, Message::Client, Message::Internal};
 use crate::messages::chat::ChatMessage;
 use crate::messages::game::GameMessage;
 use crate::messages::room::{RoomMessage, RoomMessageAction};
 use crate::player::PlayerId;
 use crate::player::Player;
+use crate::wordbank::creator::Creator;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
@@ -36,10 +39,10 @@ pub struct Room {
 
 impl Room {
     /* Initialization of a new room; starts the room, so players can now send messages to be processed. */
-    pub fn new() -> Self {
+    pub fn new(game_creator: Arc<Mutex<Creator>>) -> Self {
         let (tx, mut rx) = mpsc::channel::<Message>(MSPC_BUFFER_SIZE);
         tokio::spawn(async move {
-            let controller: RoomController = RoomController { players: HashMap::new(), owner: None };
+            let mut controller: RoomController = RoomController { players: HashMap::new(), owner: None, active_game: None, game_creator };
             while let Some(message) = rx.recv().await {
                 controller.handle_message(message);
             }
@@ -58,7 +61,11 @@ messages it handles, look at the match statement below. */
 pub struct RoomController {
     players: HashMap<PlayerId, Player>,
     /* The first player to join the room is assigned owner and is responsible for starting the game. */
-    owner: Option<PlayerId>
+    owner: Option<PlayerId>,
+    /* The active game, if any, owned by the room. */
+    active_game: Option<RoomToGameBridge>,
+    /* The shared game creator. */
+    game_creator: Arc<Mutex<Creator>>
 }
 
 /* This struct enables bidrectional communication between the room and the game using message passing.
@@ -71,11 +78,12 @@ pub struct RoomToGameBridge {
 }
 
 impl RoomController {
-    pub fn handle_message(&self, message: Message) {
+    pub fn handle_message(&mut self, message: Message) {
         match message {
-            Message::Chat(chat_message) => self.handle_chat_message(chat_message),
-            Message::Game(game_message) => self.handle_game_message(game_message),
-            Message::Room(room_message) => self.handle_room_message(room_message)
+            Client(ClientMessage::Chat(chat_message)) => self.handle_chat_message(chat_message),
+            Client(ClientMessage::Game(game_message)) => self.handle_game_message(game_message),
+            Client(ClientMessage::Room(room_message)) => self.handle_room_message(room_message),
+            Internal(internal_message) => self.handle_internal_message(internal_message)
         }
     }
 
@@ -98,16 +106,8 @@ impl RoomController {
         todo!()
     }
 
-    fn handle_room_message(&self, message: RoomMessage){
+    fn handle_room_message(&mut self, message: RoomMessage){
         match message.action {
-            RoomMessageAction::InitialConnection(player_id) => {
-                self.dispatch_event(
-                    Event { 
-                        recipient: Recipient::SinglePlayerList(vec![player_id]), 
-                        content: EventContent::Room(RoomEvents::RoomState(self.get_room_state()))
-                    }
-                )
-            },
             RoomMessageAction::JoinTeam(player_name, team) => {
                 self.dispatch_event(
                     Event { 
@@ -120,6 +120,8 @@ impl RoomController {
                 )
             },
             RoomMessageAction::StartGame => {
+                /* Create the new game. */
+                self.start_game();
                 self.dispatch_event(
                     Event { 
                         recipient: Recipient::All,
@@ -128,6 +130,10 @@ impl RoomController {
                 )
             }
         }
+    }
+
+    fn handle_internal_message(&self, message: InternalMessage){
+        todo!()
     }
 
     fn dispatch_event(&self, event: Event) {
@@ -157,6 +163,11 @@ impl RoomController {
                 }
             }
         }
+    }
+
+    fn start_game(&self) {
+        let mut sync_game_creator = self.game_creator.lock().unwrap();
+        let new_game = sync_game_creator.get_game();
     }
 
     /* Construct the room state from the list of active players */

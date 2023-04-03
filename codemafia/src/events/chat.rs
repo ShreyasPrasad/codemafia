@@ -1,11 +1,13 @@
 /* Defines the content of a chat event.  */
 
-#[derive(Clone)]
+use serde::Serialize;
+
+#[derive(Clone, Serialize)]
 pub enum ChatEvents {
     ChatMessageEvent(ChatMessageEvent)
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct ChatMessageEvent {
     pub sender: String,
     pub text: String,

@@ -2,12 +2,14 @@
 
 use std::fmt;
 
-#[derive(Debug)]
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Deserialize)]
 pub struct GameMessage {
     action: GameMessageAction,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub enum GameMessageAction {
     WordSuggested(String /* The word that was suggested */),
     WordClicked(u8 /* The index of the word that was clicked */),
@@ -15,7 +17,7 @@ pub enum GameMessageAction {
     EndTurn,
 }
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub enum Team {
     Blue,
     Red
