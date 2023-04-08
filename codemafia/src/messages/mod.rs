@@ -25,4 +25,3 @@ pub enum ClientMessage {
     Room(RoomMessage),
     Game(GameMessage)
 }
-

@@ -2,12 +2,12 @@
 
 use serde::Serialize;
 
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub enum ChatEvents {
     ChatMessageEvent(ChatMessageEvent)
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ChatMessageEvent {
     pub sender: String,
     pub text: String,

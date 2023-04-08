@@ -15,7 +15,7 @@ use tokio::sync::mpsc;
 use std::{net::SocketAddr, sync::Arc};
 use serde::Deserialize;
 
-use crate::{manager::{RoomCode, room::RoomSender}, routes::AppState, messages::{Message::Internal, internal::InternalMessage}, events::EventContent};
+use crate::{manager::{RoomCode, room::MessageSender}, routes::AppState, messages::{Message::Internal, internal::InternalMessage}, events::EventContent};
 use super::util::spawn_game_connection;
 
 pub const PLAYER_MSPC_BUFFER_SIZE: usize = 4;
@@ -34,7 +34,7 @@ pub async fn game_route_handler(
 ) -> impl IntoResponse {
 
     // check if the game exists
-    let mut room_handle: Option<RoomSender> = None;
+    let mut room_handle: Option<MessageSender> = None;
     {
         match state.manager.read() {
             Ok(manager_lock) => {
@@ -56,7 +56,7 @@ pub async fn game_route_handler(
 }
 
 /// Actual websocket statemachine (one will be spawned per connection)
-async fn handle_socket(socket: WebSocket, who: SocketAddr, msg_sender: RoomSender, player_name: String) {
+async fn handle_socket(socket: WebSocket, who: SocketAddr, msg_sender: MessageSender, player_name: String) {
     // pass the current game state to the player, including existing player state if they are reconnecting
     let (tx, rx) = mpsc::channel::<EventContent>(PLAYER_MSPC_BUFFER_SIZE);
     let player_creation_result  = msg_sender.send(Internal(InternalMessage::NewPlayer(player_name, tx)))

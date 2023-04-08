@@ -3,9 +3,8 @@
 use crate::messages::game::Team;
 use serde::Serialize;
 
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub enum RoomEvents {
-    PlayerJoinedTeam(PlayerOnTeam),
     RoomState(RoomState),
     GameStarted
 }
@@ -18,8 +17,8 @@ pub struct PlayerOnTeam {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct You {
-    player_on_team: PlayerOnTeam,
-    id: String /* player_id as str */
+    pub name: Option<String>, /* player_name */
+    pub id: String /* player_id as str */
 }
 
 #[derive(Debug, Clone, Serialize)]

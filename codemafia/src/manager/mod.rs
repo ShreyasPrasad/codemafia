@@ -12,8 +12,9 @@ use std::{collections::HashMap, sync::{Arc, Mutex}};
 use rand::{Rng, rngs::ThreadRng}; // 0.8
 
 pub mod room;
+pub mod dispatcher;
 
-use crate::{manager::room::{Room, RoomSender}, wordbank::creator::Creator};
+use crate::{manager::room::{Room, MessageSender}, wordbank::creator::Creator};
 
 /* Constants used to define the RNG that generates game codes that are distributed to player. */
 const ROOM_CODE_CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -47,7 +48,7 @@ impl RoomManager {
     }
 
     /* Invoked to obtain the RoomSender for a particular game room; returns None if the room doesn't exist. */
-    pub fn get_room_handle(&self, room_code: RoomCode) -> Option<RoomSender> {
+    pub fn get_room_handle(&self, room_code: RoomCode) -> Option<MessageSender> {
         match self.rooms.get(&room_code) {
             Some(room) => Some(room.get_room_sender()),
             None => None

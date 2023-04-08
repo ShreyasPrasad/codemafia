@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Deserialize)]
 pub struct GameMessage {
-    action: GameMessageAction,
+    pub action: GameMessageAction,
 }
 
 #[derive(Debug, Deserialize)]

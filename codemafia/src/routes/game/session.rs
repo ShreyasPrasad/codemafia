@@ -13,7 +13,7 @@ use tokio::sync::{oneshot, mpsc};
 
 use std::{sync::Arc, str::FromStr, net::SocketAddr};
 
-use crate::{manager::{RoomCode, room::RoomSender}, routes::AppState,
+use crate::{manager::{RoomCode, room::MessageSender}, routes::AppState,
     events::{room::You, EventContent}, messages::{Message::Internal, internal::InternalMessage}, player::PlayerId};
 
 use super::{util::{get_room_sender, spawn_game_connection}, PLAYER_ID_COOKIE_KEY, game::PLAYER_MSPC_BUFFER_SIZE};
@@ -33,7 +33,7 @@ pub async fn session_route_handler(
     match player_id_str {
         Some(player_id) => {
              // check if the game exists
-            let room_handle: Option<RoomSender> = get_room_sender(state, code);
+            let room_handle: Option<MessageSender> = get_room_sender(state, code);
         
             /* Check if the room exists. */
             match room_handle {
@@ -53,8 +53,8 @@ pub async fn session_route_handler(
     }
 }
 
-async fn check_if_player_exists_in_room(room_sender: &RoomSender, player_id: PlayerId) -> Option<You> {
-    let (tx, rx) = oneshot::channel::<You>();
+async fn check_if_player_exists_in_room(room_sender: &MessageSender, player_id: PlayerId) -> Option<You> {
+    let (tx, rx) = oneshot::channel::<Option<You>>();
     let message_send = room_sender.send(
         Internal(InternalMessage::SessionConnection(player_id, tx))
     ).await;
@@ -63,7 +63,7 @@ async fn check_if_player_exists_in_room(room_sender: &RoomSender, player_id: Pla
         Ok(..) => {
             match rx.await {
                 Ok(you) => {
-                    Some(you)
+                    you
                 },
                 Err(err) => {
                     println!("Oneshot channel was cancelled: {}", err);
@@ -78,7 +78,7 @@ async fn check_if_player_exists_in_room(room_sender: &RoomSender, player_id: Pla
     } 
 } 
 
-async fn handle_socket(socket: WebSocket, who: SocketAddr, msg_sender: RoomSender, player_id: PlayerId) {
+async fn handle_socket(socket: WebSocket, who: SocketAddr, msg_sender: MessageSender, player_id: PlayerId) {
     // pass the current game state to the player, including existing player state if they are reconnecting
     let (tx, rx) = mpsc::channel::<EventContent>(PLAYER_MSPC_BUFFER_SIZE);
     let player_creation_result  = msg_sender.send(Internal(InternalMessage::UpdatePlayer(player_id, tx)))

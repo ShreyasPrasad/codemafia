@@ -18,11 +18,13 @@ pub struct GameServer {
 }
 
 impl GameServer {
+
     pub fn new(game: Game, bridge: RoomToGameBridge) -> Self {
         GameServer { game, bridge }
     }
-    pub async fn game_loop(&mut self) {
-        while let Some(cmd) = self.bridge.game_channel.recv().await {
+
+    pub async fn start_game_loop(&mut self) {
+        while let Some(cmd) = self.bridge.game_channel_rx.recv().await {
             
         }
     }

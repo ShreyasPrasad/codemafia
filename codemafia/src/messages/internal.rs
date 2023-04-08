@@ -15,4 +15,4 @@ pub enum InternalMessage {
 
 /* Type used for situations where an active player has not yet been associated with an incoming connection,
 and we need information about them from the room. */
-pub type YouReceiver = oneshot::Sender<You>;
+pub type YouReceiver = oneshot::Sender<Option<You>>;

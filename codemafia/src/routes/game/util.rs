@@ -10,11 +10,11 @@ use tokio::sync::mpsc::Receiver;
 
 use std::{net::SocketAddr, sync::Arc};
 
-use crate::{manager::{RoomCode, room::RoomSender}, routes::AppState, messages::{Message, ClientMessage}, events::EventContent};
+use crate::{manager::{RoomCode, room::MessageSender}, routes::AppState, messages::{Message, ClientMessage}, events::EventContent};
 
-pub fn get_room_sender(state: Arc<AppState>, code: RoomCode) -> Option<RoomSender> {
+pub fn get_room_sender(state: Arc<AppState>, code: RoomCode) -> Option<MessageSender> {
     // check if the game exists
-    let mut room_handle: Option<RoomSender> = None;
+    let mut room_handle: Option<MessageSender> = None;
     {
         match state.manager.read() {
             Ok(manager_lock) => {
@@ -28,7 +28,7 @@ pub fn get_room_sender(state: Arc<AppState>, code: RoomCode) -> Option<RoomSende
     room_handle
 }
 
-pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sender: RoomSender, mut rx: Receiver<EventContent>) {
+pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sender: MessageSender, mut rx: Receiver<EventContent>) {
     // By splitting socket we can send and receive at the same time. In this example we will send
     // unsolicited messages to client based on some sort of server's internal event (i.e .timer).
     let (mut sender, mut receiver) = socket.split();

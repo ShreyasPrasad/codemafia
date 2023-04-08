@@ -2,7 +2,7 @@
 
 use serde::Serialize;
 
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub enum GameEvents {
 
 }

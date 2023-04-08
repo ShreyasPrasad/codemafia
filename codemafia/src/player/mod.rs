@@ -5,7 +5,7 @@
     for custom player implementations.
 */
 
-use std::hash::{Hash, Hasher};
+use std::{hash::{Hash, Hasher}, fmt};
 use uuid::Uuid;
 
 pub mod role;
@@ -57,5 +57,21 @@ impl PartialEq for Player {
 impl Hash for Player {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.player_id.hash(state)
+    }
+}
+
+/* Declare error types for the player */
+
+// Define an error type for errors that occur when the creator is instantiated
+#[derive(Debug, Clone)]
+pub enum PlayerError {
+    DoesNotExist
+}
+
+impl fmt::Display for PlayerError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::DoesNotExist => write!(f, "The player does not exist.")
+        }   
     }
 }

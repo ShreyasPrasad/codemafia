@@ -18,11 +18,15 @@ pub mod player;
 
 pub type EventSender = mpsc::Sender<EventContent>;
 
+pub const SEND_ERROR_MSG: &'static str = "Failed to send channel message";
+
+#[derive(Debug)]
 pub struct Event {
     pub recipient: Recipient,
     pub content: EventContent
 }
 
+#[derive(Debug)]
 /* Defines the different recipients of events. */
 pub enum Recipient {
     /* Specify the recipients by their game role. */
@@ -33,7 +37,7 @@ pub enum Recipient {
     All
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub enum EventContent {
     Chat(ChatEvents),
     Game(GameEvents),
