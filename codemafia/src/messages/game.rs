@@ -15,6 +15,7 @@ pub enum GameMessageAction {
     WordClicked(u8 /* The index of the word that was clicked */),
     SpyMasterVoteInitiated,
     EndTurn,
+    MakeTeams
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]

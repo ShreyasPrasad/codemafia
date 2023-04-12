@@ -7,17 +7,16 @@
 */
 
 use crate::events::chat::{ChatMessageEvent, ChatEvents};
-use crate::events::room::{RoomEvents, RoomState, PlayerOnTeam, You};
+use crate::events::room::{RoomEvents, You};
 use crate::events::{Event, Recipient, EventContent, SEND_ERROR_MSG};
 use crate::game::GameServer;
 use crate::messages::internal::InternalMessage;
 use crate::messages::{Message, ClientMessage, Message::Client, Message::Internal};
 use crate::messages::chat::ChatMessage;
-use crate::messages::game::{GameMessage, Team};
+use crate::messages::game::GameMessage;
 use crate::messages::room::{RoomMessage, RoomMessageAction};
-use crate::player::{PlayerId, PlayerError, PlayerChannel};
+use crate::player::PlayerId;
 use crate::player::Player;
-use crate::player::role::CodeMafiaRole;
 use crate::wordbank::creator::Creator;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -28,6 +27,7 @@ use tokio::sync::mpsc::Sender;
 use tokio::sync::mpsc::Receiver;
 use uuid::Uuid;
 
+use super::bridge::RoomToGameBridge;
 use super::dispatcher::EventDispatcher;
 
 /* These are aliases for the room listener and receiver; this is the channel that all players send their actions to.  */
@@ -78,9 +78,9 @@ impl Room {
 /* This struct is responisble for handling room-specific messages sent by players. To see what types of
 messages it handles, look at the match statement below. */
 pub struct RoomController {
-    players: Arc<DashMap<PlayerId, Player>>,
+    pub players: Arc<DashMap<PlayerId, Player>>,
     /* The first player to join the room is assigned owner and is responsible for starting the game. */
-    owner: Option<PlayerId>,
+    pub owner: Option<PlayerId>,
     /* The active game, if any, owned by the room. */
     active_game: Option<Sender<GameMessage>>,
     /* The shared game creator. */
@@ -89,14 +89,7 @@ pub struct RoomController {
     pub event_dispatcher: Sender<Event>
 }
 
-/* This struct enables communication between the room and the game using message passing.
-The benefit of this approach is that game server logic and player/room management are not coupled (SOC). */
-pub struct RoomToGameBridge {
-    /* Used by the room to send game messages to the game server. */
-    pub game_channel_rx: Receiver<GameMessage>,
-    /* Used by the game to relay events back to the dispatcher. */
-    pub room_channel_tx: Sender<Event>
-}
+
 
 impl RoomController {
     pub async fn handle_message(&mut self, message: Message) {
@@ -143,10 +136,10 @@ impl RoomController {
 
     async fn handle_room_message(&mut self, message: RoomMessage){
         match message.action {
-            RoomMessageAction::JoinTeam(player_id, team) => {
+            RoomMessageAction::JoinTeam(player_id, team, is_spymaster) => {
                 let player_id = Uuid::from_str(&player_id).unwrap();
                 /* Update the team and send room state update to all players upon success. */
-                if let Ok(()) = self.update_player_team(player_id, team) {
+                if let Ok(()) = self.update_player_team(player_id, team, is_spymaster) {
                   self.dispatch_room_state_update().await;
                 } 
             },
@@ -166,7 +159,9 @@ impl RoomController {
     async fn handle_internal_message(&mut self, message: InternalMessage){
         match message {
             InternalMessage::NewPlayer(player_name, event_sender) => {
-                self.create_player(player_name, event_sender);
+                let player: Player = self.create_player(player_name, event_sender);
+                /* Set the player cookie. */
+                self.set_player_cookie(player.player_id);
             },
             InternalMessage::SessionConnection(player_id, you_receiver) => {
                 match self.players.get(&player_id) {
@@ -180,11 +175,15 @@ impl RoomController {
                         you_receiver.send(None).expect(SEND_ERROR_MSG);
                     }
                 }
+                /* Set the player cookie. */
+                self.set_player_cookie(player_id);
             },
             InternalMessage::UpdatePlayer(player_id, event_sender) => {
                 if let Err(err) = self.update_player(player_id, event_sender) {
                     println!("Error updating player: {}", err);
                 }
+                /* Set the player cookie. */
+                self.set_player_cookie(player_id);
             }
         }
         /* Update the players after all the actions above. */
@@ -200,80 +199,12 @@ impl RoomController {
         /* Construct the room-to-game bridge. */
         let bridge: RoomToGameBridge = RoomToGameBridge { game_channel_rx, room_channel_tx: self.event_dispatcher.clone() };
         /* Create the game server. */
-        let mut game_server: GameServer = GameServer::new(game, bridge);
+        let mut game_server: GameServer = GameServer::new(game, bridge, self.players.clone());
         /* Start the game loop. */
         tokio::spawn(async move {
             game_server.start_game_loop().await;
         });
         /* Save the message sender so we can forward game messages received from players. */
         self.active_game = Some(game_channel_tx);   
-    }
-
-    fn create_player(&mut self, player_name: String, event_sender: Sender<EventContent>) -> Player {
-        let new_player = Player { 
-            player_id: Uuid::new_v4(), 
-            channel: PlayerChannel{ event_sender }, 
-            role: None, 
-            name: Some(player_name)
-        };
-        /* Assign the owner. */
-        if self.players.is_empty() {
-            self.owner = Some(new_player.player_id);
-        }
-        new_player
-    }
-
-    fn update_player(&mut self, player_id: PlayerId, event_sender: Sender<EventContent>) -> Result<(), PlayerError>{
-        match self.players.get_mut(&player_id) {
-            Some(mut player) => {
-                player.channel.event_sender = event_sender;
-                Ok(())
-            },
-            None => {
-                Err(PlayerError::DoesNotExist)
-            }
-        }
-    }
-
-    async fn dispatch_room_state_update(&self) {
-        self.event_dispatcher.send(
-            Event { 
-                recipient: Recipient::All,
-                content: EventContent::Room(RoomEvents::RoomState(self.get_room_state()))
-            }
-        ).await.expect(SEND_ERROR_MSG);
-    }
-
-    fn update_player_team(&mut self, player_id: PlayerId, team: Team) -> Result<(), PlayerError> {
-        match self.players.get_mut(&player_id) {
-            Some(mut p_ref) => {
-                match &mut p_ref.role {
-                    Some(role) => {
-                        role.team = team;
-                        Ok(())
-                    },
-                    None => {
-                        p_ref.role = Some(CodeMafiaRole { role_title: None, team });
-                        Ok(())
-                    }
-                }
-            },
-            None => Err(PlayerError::DoesNotExist)
-        }
-    }
-
-    /* Construct the room state from the list of active players */
-    fn get_room_state(&self) -> RoomState {
-        let mut active_players: Vec<PlayerOnTeam> = vec![];
-        self.players.iter().for_each(|p_ref| {
-            if let Some(player_name) = &p_ref.name {
-                if let Some(player_role) = &p_ref.role {
-                    active_players.push(PlayerOnTeam{name: player_name.to_string(), team: player_role.team.clone()});
-                }
-            }
-        });
-        RoomState {
-            players: active_players
-        }
     }
 }

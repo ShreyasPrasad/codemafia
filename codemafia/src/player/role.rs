@@ -27,7 +27,7 @@ impl fmt::Display for CodeMafiaRoleTitle {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum CodeMafiaRoleTitle {
     SpyMaster,
     Undercover,

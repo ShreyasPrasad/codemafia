@@ -13,6 +13,8 @@ use rand::{Rng, rngs::ThreadRng}; // 0.8
 
 pub mod room;
 pub mod dispatcher;
+pub mod player;
+pub mod bridge;
 
 use crate::{manager::room::{Room, MessageSender}, wordbank::creator::Creator};
 
