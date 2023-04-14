@@ -1,7 +1,7 @@
 use axum::{
     extract::{
         ws::{WebSocketUpgrade, WebSocket},
-        TypedHeader, Path, State, ConnectInfo
+        Path, State, ConnectInfo
     },
     response::IntoResponse, http::StatusCode,
 };
@@ -16,7 +16,7 @@ use std::{sync::Arc, str::FromStr, net::SocketAddr};
 use crate::{manager::{RoomCode, room::MessageSender}, routes::AppState,
     events::{room::You, EventContent}, messages::{Message::Internal, internal::InternalMessage}, player::PlayerId};
 
-use super::{util::{get_room_sender, spawn_game_connection}, PLAYER_ID_COOKIE_KEY, game::PLAYER_MSPC_BUFFER_SIZE};
+use super::{util::{get_room_sender, PLAYER_MSPC_BUFFER_SIZE, init_socket}, PLAYER_ID_COOKIE_KEY};
 
 pub async fn session_route_handler(
     Path(code): Path<RoomCode>, /* The room code the client is attempting to connect to. */
@@ -41,7 +41,8 @@ pub async fn session_route_handler(
                 Some(sender) => {
                     let player_id_uuid = PlayerId::from_str(&player_id).unwrap();
                     match check_if_player_exists_in_room(&sender, player_id_uuid).await {
-                        Some(you) => ws.on_upgrade(
+                        /* We might do something with you later. */
+                        Some(_you) => ws.on_upgrade(
                         move |socket| handle_socket(socket, addr, sender, player_id_uuid)),
                         None => (StatusCode::NOT_FOUND, "Player not found.").into_response()
                     }
@@ -84,9 +85,5 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, msg_sender: MessageSe
     let player_creation_result  = msg_sender.send(Internal(InternalMessage::UpdatePlayer(player_id, tx)))
     .await;
 
-    if let Err(err) = player_creation_result {
-        socket.close();
-    } else {
-        spawn_game_connection(socket, who, msg_sender, rx);
-    }   
+    init_socket(socket, who, msg_sender, rx, player_creation_result).await;
 }

@@ -1,6 +1,6 @@
 use super::GameServer;
 
-/* Game-turn specific methods. */
+/* Game-turn specific event handling. */
 impl GameServer {
 
 }

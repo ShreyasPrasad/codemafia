@@ -8,7 +8,6 @@
 use std::sync::Arc;
 
 use dashmap::DashMap;
-use tokio::sync::mpsc::{Receiver};
 
 use crate::manager::bridge::RoomToGameBridge;
 use crate::messages::game::GameMessageAction;
@@ -17,6 +16,7 @@ use crate::wordbank::Game;
 
 mod teams;
 mod turn;
+mod board;
 
 pub struct GameServer {
     /* The owned, generated game. */
@@ -35,6 +35,7 @@ impl GameServer {
     pub async fn start_game_loop(&mut self) {
         while let Some(cmd) = self.bridge.game_channel_rx.recv().await {
             match cmd.action {
+                /* teams.rs */
                 GameMessageAction::MakeTeams => self.complete_teams().await,
                 _ => todo!()
             }

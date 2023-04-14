@@ -161,7 +161,7 @@ impl RoomController {
             InternalMessage::NewPlayer(player_name, event_sender) => {
                 let player: Player = self.create_player(player_name, event_sender);
                 /* Set the player cookie. */
-                self.set_player_cookie(player.player_id);
+                self.set_player_cookie(player.player_id).await;
             },
             InternalMessage::SessionConnection(player_id, you_receiver) => {
                 match self.players.get(&player_id) {
@@ -176,14 +176,14 @@ impl RoomController {
                     }
                 }
                 /* Set the player cookie. */
-                self.set_player_cookie(player_id);
+                self.set_player_cookie(player_id).await;
             },
             InternalMessage::UpdatePlayer(player_id, event_sender) => {
                 if let Err(err) = self.update_player(player_id, event_sender) {
                     println!("Error updating player: {}", err);
                 }
                 /* Set the player cookie. */
-                self.set_player_cookie(player_id);
+                self.set_player_cookie(player_id).await;
             }
         }
         /* Update the players after all the actions above. */

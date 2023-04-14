@@ -1,7 +1,7 @@
 use axum::{
     extract::{
         ws::{WebSocket, WebSocketUpgrade},
-        TypedHeader, Path, State, Query
+        Path, State, Query
     },
     response::IntoResponse, http::StatusCode,
 };
@@ -16,9 +16,7 @@ use std::{net::SocketAddr, sync::Arc};
 use serde::Deserialize;
 
 use crate::{manager::{RoomCode, room::MessageSender}, routes::AppState, messages::{Message::Internal, internal::InternalMessage}, events::EventContent};
-use super::util::spawn_game_connection;
-
-pub const PLAYER_MSPC_BUFFER_SIZE: usize = 4;
+use super::util::{PLAYER_MSPC_BUFFER_SIZE, init_socket};
 
 #[derive(Deserialize)]
 pub struct NewPlayerFields {
@@ -62,9 +60,5 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, msg_sender: MessageSe
     let player_creation_result  = msg_sender.send(Internal(InternalMessage::NewPlayer(player_name, tx)))
     .await;
 
-    if let Err(err) = player_creation_result {
-        socket.close();
-    } else {
-        spawn_game_connection(socket, who, msg_sender, rx);
-    }    
+    init_socket(socket, who, msg_sender, rx, player_creation_result).await;
 }

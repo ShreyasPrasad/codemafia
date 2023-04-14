@@ -48,7 +48,8 @@ impl RoomController {
     }
 
     pub fn update_player_team(&mut self, player_id: PlayerId, team: Team, is_spymaster: bool) -> Result<(), PlayerError> {
-        let role_title: Option<CodeMafiaRoleTitle> = if is_spymaster { Some(CodeMafiaRoleTitle::SpyMaster) } else { None };
+        let role_title: Option<CodeMafiaRoleTitle> = 
+            if is_spymaster { Some(CodeMafiaRoleTitle::SpyMaster) } else { Some(CodeMafiaRoleTitle::Ally) };
 
         match self.players.get_mut(&player_id) {
             Some(mut p_ref) => {
@@ -74,7 +75,11 @@ impl RoomController {
         self.players.iter().for_each(|p_ref| {
             if let Some(player_name) = &p_ref.name {
                 if let Some(player_role) = &p_ref.role {
-                    active_players.push(PlayerOnTeam{name: player_name.to_string(), team: player_role.team.clone()});
+                    active_players.push(PlayerOnTeam{
+                        name: player_name.to_string(), 
+                        id: p_ref.player_id.to_string(), 
+                        team: player_role.team.clone()
+                    });
                 }
             }
         });

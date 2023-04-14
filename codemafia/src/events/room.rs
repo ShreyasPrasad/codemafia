@@ -12,6 +12,7 @@ pub enum RoomEvents {
 #[derive(Debug, Clone, Serialize)]
 pub struct PlayerOnTeam {
     pub name: String,
+    pub id: String,
     pub team: Team
 }
 

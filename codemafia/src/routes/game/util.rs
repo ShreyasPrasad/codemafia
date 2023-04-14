@@ -6,11 +6,13 @@ use axum::{
 
 //allows to split the websocket stream into separate TX and RX branches
 use futures::{stream::StreamExt, SinkExt};
-use tokio::sync::mpsc::Receiver;
+use tokio::sync::mpsc::{Receiver, error::SendError};
 
 use std::{net::SocketAddr, sync::Arc};
 
 use crate::{manager::{RoomCode, room::MessageSender}, routes::AppState, messages::{Message, ClientMessage}, events::EventContent};
+
+pub const PLAYER_MSPC_BUFFER_SIZE: usize = 4;
 
 pub fn get_room_sender(state: Arc<AppState>, code: RoomCode) -> Option<MessageSender> {
     // check if the game exists
@@ -44,7 +46,9 @@ pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sen
                     match serde_json::to_string(&content) {
                         Ok(parsed_content) => {
                             cnt = cnt + 1;
-                            sender.send(AxumMessage::Text(parsed_content));
+                            if let Err(err) = sender.send(AxumMessage::Text(parsed_content)).await{
+                                println!("Error sending event to player: {}", err);
+                            }
                         }, 
                         Err(err) => {
                             cnt = cnt + 1;
@@ -68,7 +72,9 @@ pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sen
                     cnt = cnt + 1;
                     match serde_json::from_str::<ClientMessage>(msg_text) {
                         Ok(msg_struct) => {
-                            event_sender.send(Message::Client(msg_struct));
+                            if let Err(err) = event_sender.send(Message::Client(msg_struct)).await {
+                                println!("Error sending client message to room: {}", err);
+                            }
                         },
                         Err(err) => {
                             println!("Error deserializing message from websocket string {}", err);
@@ -104,4 +110,16 @@ pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sen
 
     // returning from the handler closes the websocket connection
     println!("Websocket context {} destroyed", who);
+}
+
+/// Actual websocket statemachine (one will be spawned per connection)
+pub async fn init_socket(socket: WebSocket, who: SocketAddr, msg_sender: MessageSender, rx: Receiver<EventContent>, create_result: Result<(), SendError<Message>>) {
+    if let Err(err) = create_result {
+        println!("Error creating player: {}. Closing socket.", err);
+        if let Err(s_err) = socket.close().await {
+            println!("Error closing socket: {}", s_err);
+        }
+    } else {
+        spawn_game_connection(socket, who, msg_sender, rx).await;
+    }    
 }

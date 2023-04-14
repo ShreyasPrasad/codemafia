@@ -6,4 +6,4 @@ pub mod session;
 /* Route to allow new players to connect to the game. */
 pub mod game;
 /* Share utilities between session and game. */
-pub mod util;
+mod util;

@@ -7,6 +7,8 @@
 
  */
 
+use serde::Serialize;
+
 pub mod creator;
 
 pub const NUM_BLUE_WORDS: usize = 8;
@@ -14,7 +16,7 @@ pub const NUM_RED_WORDS: usize = 9;
 pub const NUM_BLACK_WORDS: usize = 1;
 
 /* Defines the possible types of a word in the game. */
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize)]
 pub enum WordType {
     Black,
     Normal,

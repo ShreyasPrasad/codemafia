@@ -14,11 +14,17 @@ use std::fmt;
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
 use rand::prelude::*;
+use clap::Parser;
 
 const GAME_BUFFER_SIZE: usize = 5;
 const MINIMUM_WORDBANK_SIZE: usize = 200;
 const NUMBER_OF_WORDS_IN_GAME: usize = 25;
-const WORD_FILES: [&'static str; 1] = ["wordlist"];
+
+#[derive(Parser, Debug)]
+struct Args {
+    #[arg(short, long)]
+    words: String
+}
 
 pub struct Creator {
     all_words: Vec<String>,
@@ -94,24 +100,24 @@ impl Creator {
         // collect all words into map to prevent accepting duplicates
         let mut word_map: HashSet<String> = HashSet::new();
 
-        for file in WORD_FILES {
-            let file = File::open(file);
-            match file {
-                Ok(file_contents) => {
-                    // attempt to add the contents of the file to the map of words
-                    let reader = BufReader::new(file_contents);
-                    for line in reader.lines() {
-                        if let Ok(word) = line {
-                            word_map.insert(word);
-                        }
+        let args = Args::parse();
+        let file = File::open(args.words);
+        match file {
+            Ok(file_contents) => {
+                // attempt to add the contents of the file to the map of words
+                let reader = BufReader::new(file_contents);
+                for line in reader.lines() {
+                    if let Ok(word) = line {
+                        word_map.insert(word);
                     }
-                },
-                Err(error) => {
-                    // silently ignore file opening failures for now
-                    println!("{}", error);
                 }
+            },
+            Err(error) => {
+                // silently ignore file opening failures for now
+                println!("{}", error);
             }
         }
+        
 
         if word_map.len() < MINIMUM_WORDBANK_SIZE {
             Err(CreatorError::NotEnoughWords)

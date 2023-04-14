@@ -14,6 +14,10 @@ use crate::messages::game::Team;
 
 use super::GameServer;
 
+// Some useful constants.
+const MIN_NUMBER_OF_PLAYERS_ON_TEAM : usize = 4;
+const MIN_NUMBER_OF_SPYMASTERS: usize = 2;
+
 impl GameServer {
     pub async fn complete_teams(&self){
         let mut num_blue = 0;
@@ -35,7 +39,9 @@ impl GameServer {
             }
         });
 
-        if num_blue < 4 || num_red < 4  || num_spymasters < 2{
+        if num_blue < MIN_NUMBER_OF_PLAYERS_ON_TEAM 
+            || num_red < MIN_NUMBER_OF_PLAYERS_ON_TEAM  
+            || num_spymasters < MIN_NUMBER_OF_SPYMASTERS {
             self.bridge.room_channel_tx.send(
                 Event {
                     recipient: Recipient::All,
