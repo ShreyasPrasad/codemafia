@@ -13,7 +13,8 @@ pub enum RoomEvents {
 pub struct PlayerOnTeam {
     pub name: String,
     pub id: String,
-    pub team: Team
+    pub team: Team,
+    pub is_spymaster: bool
 }
 
 #[derive(Debug, Clone, Serialize)]

@@ -1,8 +1,10 @@
 use std::fmt;
 
+use serde::Serialize;
+
 use crate::messages::game::Team;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize)]
 pub struct CodeMafiaRole {
     pub role_title: Option<CodeMafiaRoleTitle>,
     pub team: Team
@@ -27,7 +29,7 @@ impl fmt::Display for CodeMafiaRoleTitle {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize)]
 pub enum CodeMafiaRoleTitle {
     SpyMaster,
     Undercover,

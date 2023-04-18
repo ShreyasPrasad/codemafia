@@ -16,7 +16,7 @@ pub const NUM_RED_WORDS: usize = 9;
 pub const NUM_BLACK_WORDS: usize = 1;
 
 /* Defines the possible types of a word in the game. */
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Copy, Clone, Serialize)]
 pub enum WordType {
     Black,
     Normal,
@@ -24,19 +24,19 @@ pub enum WordType {
     Red
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Word {
-    text: String,
-    word_type: WordType
+    pub text: String,
+    pub word_type: WordType
 }
 
 #[derive(Debug)]
 pub struct Board {
-    words: Vec<Word>
+    pub words: Vec<Word>
 }
 
 /* The complete definition of a codenames game, accessible to callers, such as the gameserver. */
 #[derive(Debug)]
 pub struct Game {
-    board: Board
+    pub board: Board
 }

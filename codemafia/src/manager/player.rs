@@ -78,7 +78,8 @@ impl RoomController {
                     active_players.push(PlayerOnTeam{
                         name: player_name.to_string(), 
                         id: p_ref.player_id.to_string(), 
-                        team: player_role.team.clone()
+                        team: player_role.team.clone(),
+                        is_spymaster: player_role.role_title == Some(CodeMafiaRoleTitle::SpyMaster)
                     });
                 }
             }

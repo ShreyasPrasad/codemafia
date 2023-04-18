@@ -9,6 +9,7 @@ use crate::events::EventContent;
 use crate::events::Recipient;
 use crate::events::SEND_ERROR_MSG;
 use crate::events::game::GameEvents;
+use crate::player::role::CodeMafiaRole;
 use crate::player::role::CodeMafiaRoleTitle;
 use crate::messages::game::Team;
 
@@ -52,6 +53,9 @@ impl GameServer {
 
         // Assign the 2 undercover players randomly.
         self.assign_undercover_players();
+
+        // Send the players their new roles.
+        self.send_player_roles().await;
     }
 
     fn assign_undercover_players(&self) {
@@ -75,5 +79,26 @@ impl GameServer {
                 }
             }
         }
+    }
+
+    async fn send_player_roles(&self) {
+        /* Send allies on both teams their ally role. */
+        self.bridge.room_channel_tx.send(
+            Event {
+                recipient: Recipient::SingleRoleList(
+                    vec![CodeMafiaRole { team: Team::Blue, role_title: Some(CodeMafiaRoleTitle::Ally)}]),
+                content: EventContent::Game(GameEvents::RoleUpdated(CodeMafiaRoleTitle::Ally))
+            }
+        ).await.expect(SEND_ERROR_MSG);
+
+        /* Send undercover operatives their role. */
+        self.bridge.room_channel_tx.send(
+            Event {
+                recipient: Recipient::SingleRoleList(
+                    vec![CodeMafiaRole { team: Team::Blue, role_title: Some(CodeMafiaRoleTitle::Undercover)},
+                         CodeMafiaRole { team: Team::Red, role_title: Some(CodeMafiaRoleTitle::Undercover)}]),
+                content: EventContent::Game(GameEvents::RoleUpdated(CodeMafiaRoleTitle::Undercover))
+            }
+        ).await.expect(SEND_ERROR_MSG);
     }
 }
