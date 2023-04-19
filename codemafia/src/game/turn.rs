@@ -1,20 +1,24 @@
-use crate::{messages::game::Team, events::game::TeamTurn};
+use std::sync::Arc;
+
+use crate::{messages::game::Team, events::game::TeamTurn, player::{PlayerId, Player}};
+use dashmap::DashMap;
 use itertools::interleave;
-use crate::{events::{game::GameEvents, Event, EventContent, SEND_ERROR_MSG}, player::role::{CodeMafiaRole, CodeMafiaRoleTitle}};
+use crate::{events::{game::GameEvents, Event, EventContent, SEND_ERROR_MSG}};
 use crate::events::Recipient;
 
 use super::GameServer;
 
 /* Game-turn specific event handling. */
 impl GameServer {
-    pub async fn set_coordinators(&mut self) {
+    pub fn get_turn_state_machine(players: Arc<DashMap<PlayerId, Player>>) -> TurnStateMachine {
         /* Determine the coordinator order by interweaving the blue and red ally players. */
         let mut blue_ally_player_ids: Vec<(Team, String)> = vec![];
         let mut red_ally_player_ids: Vec<(Team, String)> = vec![];
         
-        self.players.iter().for_each(|player| {
+        players.iter().for_each(|player| {
             if let Some(player_role) = &player.role {
-                if player_role.role_title == Some(crate::player::role::CodeMafiaRoleTitle::Ally) {
+                /* Include both undercover operatives and allies. */
+                if player_role.role_title != Some(crate::player::role::CodeMafiaRoleTitle::SpyMaster) {
                     match player_role.team {
                         Team::Blue => blue_ally_player_ids.push((Team::Blue, player.player_id.to_string())),
                         Team::Red => red_ally_player_ids.push((Team::Red, player.player_id.to_string()))
@@ -22,25 +26,22 @@ impl GameServer {
                 }
             }
         });
+        
         let coordinators = interleave(red_ally_player_ids, blue_ally_player_ids).collect::<Vec<(Team, String)>>();
-        self.turn_state = Some(
-            TurnStateMachine::new(coordinators)
-        )
+        TurnStateMachine::new(coordinators)
     }
 
     pub async fn advance_turn(&mut self) {
-        if let Some(turn_state) = &mut self.turn_state {
-            if let Some(next_turn) = turn_state.next(){
-                self.bridge.room_channel_tx.send(
-                    Event {
-                        recipient: Recipient::All,
-                        content: EventContent::Game(GameEvents::Turn(TeamTurn {
-                            team: next_turn.0,
-                            coordinator: next_turn.1
-                        }))
-                    }
-                ).await.expect(SEND_ERROR_MSG)
-            }
+        if let Some(next_turn) = self.turn_state.next(){
+            self.bridge.room_channel_tx.send(
+                Event {
+                    recipient: Recipient::All,
+                    content: EventContent::Game(GameEvents::Turn(TeamTurn {
+                        team: next_turn.0,
+                        coordinator: next_turn.1
+                    }))
+                }
+            ).await.expect(SEND_ERROR_MSG)
         }
     }
 }
@@ -54,8 +55,9 @@ impl Iterator for TurnStateMachine {
     type Item = (Team, String);
 
     fn next(&mut self) -> Option<Self::Item> {        
+        let resp = Some(self.coordinators[self.index % self.coordinators.len()].clone());
         self.index += 1;
-        Some(self.coordinators[(self.index - 1) % self.coordinators.len()].clone())
+        resp
     }
 }
 
@@ -65,5 +67,10 @@ impl TurnStateMachine {
             coordinators,
             index: 0
         }
+    }
+
+    pub fn get_current_turn(&self) -> (Team, String) {
+        let index: usize = self.index % self.coordinators.len();
+        self.coordinators[index].clone()
     }
 }

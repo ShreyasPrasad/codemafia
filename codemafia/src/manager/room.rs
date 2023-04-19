@@ -17,6 +17,7 @@ use crate::messages::game::GameMessage;
 use crate::messages::room::{RoomMessage, RoomMessageAction};
 use crate::player::PlayerId;
 use crate::player::Player;
+use crate::wordbank::Game;
 use crate::wordbank::creator::Creator;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -24,7 +25,6 @@ use std::sync::{Arc, Mutex};
 use dashmap::DashMap;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
-use tokio::sync::mpsc::Receiver;
 use uuid::Uuid;
 
 use super::bridge::RoomToGameBridge;
@@ -32,7 +32,6 @@ use super::dispatcher::EventDispatcher;
 
 /* These are aliases for the room listener and receiver; this is the channel that all players send their actions to.  */
 pub type MessageSender = Sender<Message>;
-pub type MessageReceiver = Receiver<Message>;
 
 /* A message buffer size of 64 should be more than sufficient as room messages are handled as soon as they 
    appear from, from at most 10-12 players. */
@@ -89,8 +88,6 @@ pub struct RoomController {
     pub event_dispatcher: Sender<Event>
 }
 
-
-
 impl RoomController {
     pub async fn handle_message(&mut self, message: Message) {
         match message {
@@ -145,7 +142,7 @@ impl RoomController {
             },
             RoomMessageAction::StartGame => {
                 /* Create the new game. */
-                self.start_game();
+                self.start_game().await;
                 self.event_dispatcher.send(
                     Event {
                         recipient: Recipient::All,
@@ -190,16 +187,21 @@ impl RoomController {
         self.dispatch_room_state_update().await;
     }
 
-    fn start_game(&mut self) {
-        let mut sync_game_creator = self.game_creator.lock().unwrap();
-        /* Create a new game for the room. */
-        let game = sync_game_creator.get_game();
-
+    async fn start_game(&mut self) {
+        let game: Game;
+        /* Make sure we are not holding a MutexGuard across an .await call. */
+        {
+            let mut sync_game_creator = self.game_creator.lock().unwrap();
+            /* Create a new game for the room. */
+            game = sync_game_creator.get_game();
+        }
         let (game_channel_tx, game_channel_rx) = mpsc::channel::<GameMessage>(GAME_MSPC_BUFFER_SIZE);
         /* Construct the room-to-game bridge. */
         let bridge: RoomToGameBridge = RoomToGameBridge { game_channel_rx, room_channel_tx: self.event_dispatcher.clone() };
         /* Create the game server. */
         let mut game_server: GameServer = GameServer::new(game, bridge, self.players.clone());
+        /* Initialize the game. */
+        game_server.init_game().await;
         /* Start the game loop. */
         tokio::spawn(async move {
             game_server.start_game_loop().await;

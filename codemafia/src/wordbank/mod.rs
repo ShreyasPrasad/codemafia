@@ -27,7 +27,8 @@ pub enum WordType {
 #[derive(Clone, Debug, Serialize)]
 pub struct Word {
     pub text: String,
-    pub word_type: WordType
+    pub word_type: WordType,
+    pub clicked: bool
 }
 
 #[derive(Debug)]

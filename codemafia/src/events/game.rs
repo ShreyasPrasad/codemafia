@@ -2,15 +2,16 @@
 
 use serde::Serialize;
 
-use crate::{wordbank::{WordType, Word}, messages::game::Team, player::role::CodeMafiaRoleTitle};
+use crate::{wordbank::WordType, messages::game::Team, player::role::CodeMafiaRoleTitle};
 
 #[derive(Debug, Clone, Serialize)]
 pub enum GameEvents {
     InSufficientPlayers,
     Board(OpaqueBoard),
     RoleUpdated(CodeMafiaRoleTitle),
-    WordClicked(Word),
-    WordSuggested(String /* The suggestor player name */, String /* The word that was suggested */),
+    WordHint(Team /* The team that is giving a word hint */, String /* The word hint */),
+    WordClicked(u8, /* The index of the word that was clicked */ WordType /* The transparent word type */),
+    WordSuggested(String /* The suggestor player name */, u8 /* The word that was suggested */),
     Turn(TeamTurn),
     GameEnded(GameOutcome)
 }

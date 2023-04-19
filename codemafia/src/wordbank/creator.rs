@@ -70,7 +70,7 @@ impl Creator {
         for i in 1..NUMBER_OF_WORDS_IN_GAME {
             // push each selected word, with a default type of WordType::Normal
             game_words.push(
-                Word { text: sample.get(i).unwrap().to_string(), word_type: WordType::Normal }
+                Word { text: sample.get(i).unwrap().to_string(), word_type: WordType::Normal, clicked: false }
             );
         }
 
