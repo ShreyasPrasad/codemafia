@@ -10,7 +10,7 @@ use tokio::sync::mpsc::{Receiver, error::SendError};
 
 use std::{net::SocketAddr, sync::Arc};
 
-use crate::{manager::{RoomCode, room::MessageSender}, routes::AppState, messages::{Message, ClientMessage}, events::EventContent};
+use crate::{manager::{RoomCode, room::MessageSender}, routes::AppState, messages::{Message, ClientMessage}, events::{EventContent, game::GameEvents}};
 
 pub const PLAYER_MSPC_BUFFER_SIZE: usize = 4;
 
@@ -48,6 +48,10 @@ pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sen
                             cnt = cnt + 1;
                             if let Err(err) = sender.send(AxumMessage::Text(parsed_content)).await{
                                 println!("Error sending event to player: {}", err);
+                            }
+                            /* We are done if we read a GameEnded message; exit the send task. */
+                            if let EventContent::Game(GameEvents::GameEnded(_)) = content {
+                                break;
                             }
                         }, 
                         Err(err) => {
@@ -87,6 +91,7 @@ pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sen
                 }
             }
         }
+        /* if the socket is closed, mark the player as disconnected. */
         cnt
     });
 

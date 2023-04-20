@@ -23,6 +23,7 @@ mod teams;
 mod turn;
 mod board;
 mod word;
+mod cache;
 
 pub struct GameServer {
     /* The owned, generated game. */

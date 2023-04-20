@@ -17,6 +17,12 @@ use self::role::CodeMafiaRole;
 /* Convenient alias for the player ID. */
 pub type PlayerId = Uuid;
 
+pub enum PlayerStatus {
+    Connected,
+    Disconnected,
+    Abandoned
+}
+
 pub struct Player {
     /* The player's unique ID. */
     pub player_id: PlayerId,
@@ -25,7 +31,9 @@ pub struct Player {
     /* The player's role. */
     pub role: Option<CodeMafiaRole>,
     /* The player's self-assigned name. */
-    pub name: Option<String>
+    pub name: Option<String>,
+    /* the player's connection status. */
+    pub status: PlayerStatus
 }
 
 pub struct PlayerChannel {
@@ -38,7 +46,8 @@ impl Player {
             channel: PlayerChannel { event_sender },
             role: None,
             name: Some(name),
-            player_id: Uuid::new_v4()
+            player_id: Uuid::new_v4(),
+            status: PlayerStatus::Connected
         }
     }
 }

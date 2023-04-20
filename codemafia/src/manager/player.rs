@@ -5,20 +5,14 @@ use crate::events::room::{RoomState, PlayerOnTeam, RoomEvents};
 use crate::events::{Event, Recipient, EventContent, SEND_ERROR_MSG};
 use crate::messages::game::Team;
 use crate::player::role::{CodeMafiaRole, CodeMafiaRoleTitle};
-use crate::player::{PlayerId, PlayerError, PlayerChannel};
+use crate::player::{PlayerId, PlayerError};
 use crate::player::Player;
 use tokio::sync::mpsc::Sender;
-use uuid::Uuid;
 
 /* Player-specific room controller methods. */
 impl RoomController {
     pub fn create_player(&mut self, player_name: String, event_sender: Sender<EventContent>) -> Player {
-        let new_player = Player { 
-            player_id: Uuid::new_v4(), 
-            channel: PlayerChannel{ event_sender }, 
-            role: None, 
-            name: Some(player_name)
-        };
+        let new_player = Player::new(player_name, event_sender);
         /* Assign the owner. */
         if self.players.is_empty() {
             self.owner = Some(new_player.player_id);
