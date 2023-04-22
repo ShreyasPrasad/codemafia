@@ -28,4 +28,6 @@ jobs:
       with:
         version: 'latest'
     - name: Build
-      run: cd app && trunk build
+      run: cd app && npm ci && trunk build
+    - name: Test
+      run: cd app && cargo test
