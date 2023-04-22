@@ -1,16 +1,11 @@
-use yew::prelude::*;
+use yew::{function_component, html, Html, Properties};
 
-pub struct Room;
+#[derive(Properties, PartialEq)]
+pub struct Props {
+    pub code: String,
+}
 
-impl Component for Room {
-    type Message = ();
-    type Properties = ();
-
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self
-    }
-
-    fn view(&self, _ctx: &Context<Self>) -> Html {
-        html! {}
-    }
+#[function_component]
+pub fn Room(props: &Props) -> Html {
+    html! { "Hello world" }
 }

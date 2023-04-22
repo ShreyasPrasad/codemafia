@@ -11,4 +11,6 @@ categories = ["gui", "wasm", "web-programming"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 yew = { version="0.20", features=["csr"] }
-yew-router = { git = "https://github.com/yewstack/yew.git" }
+yew-router = "0.17"
+patternfly-yew = { version = "0.4.1", features = ["icons-fab", "tree"] }
+chrono = { version = "0.4", features = ["wasmbind"] }

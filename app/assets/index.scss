@@ -1,0 +1,51 @@
+// PatternFly styles
+@import "../node_modules/@patternfly/patternfly/patternfly.scss";
+@import "../node_modules/@patternfly/patternfly/patternfly-addons.scss";
+
+@font-face {
+  font-family: block;
+  src: url(block.ttf);
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: block !important;
+}
+
+body {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+
+  background: linear-gradient(to bottom right, #f69f9f, #a1aefb);
+  font-size: 1.5rem;
+}
+
+body > div {
+  justify-content: center;
+  align-items: center;
+}
+
+main {
+  color: #fff6d5;
+  text-align: center;
+}
+
+.logo {
+  height: 20em;
+}
+
+h1 + .subtitle {
+  display: block;
+  margin-top: -1em;
+}
+
+h1, h2 {
+  font-family: block;
+}
+
+.landingtitle {
+  font-size: 4em;
+}
