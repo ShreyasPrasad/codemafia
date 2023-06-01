@@ -12,9 +12,9 @@ use dashmap::DashMap;
 use futures::Future;
 
 use crate::manager::bridge::RoomToGameBridge;
-use crate::messages::game::GameMessageAction;
-use crate::player::{PlayerId, Player};
-use crate::wordbank::Game;
+use codemafia::messages::game::GameMessageAction;
+use codemafia::player::{PlayerId, Player};
+use codemafia::wordbank::Game;
 
 use self::turn::TurnStateMachine;
 use self::word::GameState;

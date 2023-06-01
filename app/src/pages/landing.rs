@@ -3,6 +3,8 @@ use patternfly_yew::*;
 
 use crate::components::layoutitem::LayoutItem;
 
+use codemafia::events::game::RoomCode;
+
 #[function_component(Landing)]
 pub fn landing() -> Html {
     html! {
@@ -20,3 +22,8 @@ pub fn landing() -> Html {
         </Stack>
     }
 }
+
+pub fn get_new_room_code() -> RoomCode {
+    todo!()
+}
+

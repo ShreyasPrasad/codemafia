@@ -3,7 +3,7 @@ use std::sync::Arc;
 use dashmap::DashMap;
 use tokio::sync::mpsc::{Sender, self};
 
-use crate::{events::{Event, Recipient, SEND_ERROR_MSG}, player::{Player, PlayerId}};
+use codemafia::{events::{Event, Recipient, SEND_ERROR_MSG}, player::{Player, PlayerId}};
 
 pub struct EventDispatcher {
    event_sender: Sender<Event>

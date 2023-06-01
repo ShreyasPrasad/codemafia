@@ -1,5 +1,5 @@
 mod app;
-
+mod config;
 use app::App;
 use yew::prelude::*;
 

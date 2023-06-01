@@ -16,7 +16,6 @@ use rand_chacha::ChaCha20Rng;
 use rand::prelude::*;
 use clap::Parser;
 
-const GAME_BUFFER_SIZE: usize = 5;
 const MINIMUM_WORDBANK_SIZE: usize = 200;
 const NUMBER_OF_WORDS_IN_GAME: usize = 25;
 

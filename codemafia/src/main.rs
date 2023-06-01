@@ -1,14 +1,10 @@
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-// Declare the project submodules.
-mod wordbank;
+// Declare the project's private submodules.
 mod manager;
 mod game;
-mod player;
 mod routes;
-mod messages;
-mod events;
 
 use crate::routes::build_routes;
 

@@ -9,13 +9,15 @@ use axum::{
 //allows to extract the IP of connecting user
 use axum::extract::connect_info::ConnectInfo;
 
+use codemafia::{events::{game::RoomCode, EventContent}, messages::internal::InternalMessage};
+use codemafia::messages::Message::Internal;
 //allows to split the websocket stream into separate TX and RX branches
 use tokio::sync::mpsc;
 
 use std::{net::SocketAddr, sync::Arc};
 use serde::Deserialize;
 
-use crate::{manager::{RoomCode, room::MessageSender}, routes::AppState, messages::{Message::Internal, internal::InternalMessage}, events::EventContent};
+use crate::{manager::room::MessageSender, routes::AppState};
 use super::util::{PLAYER_MSPC_BUFFER_SIZE, init_socket};
 
 #[derive(Deserialize)]

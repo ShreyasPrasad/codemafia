@@ -4,14 +4,14 @@ use rand::rngs::ThreadRng;
 use rand::seq::IteratorRandom;
 use rand::thread_rng;
 
-use crate::events::Event;
-use crate::events::EventContent;
-use crate::events::Recipient;
-use crate::events::SEND_ERROR_MSG;
-use crate::events::game::GameEvents;
-use crate::player::role::CodeMafiaRole;
-use crate::player::role::CodeMafiaRoleTitle;
-use crate::messages::game::Team;
+use codemafia::events::Event;
+use codemafia::events::EventContent;
+use codemafia::events::Recipient;
+use codemafia::events::SEND_ERROR_MSG;
+use codemafia::events::game::GameEvents;
+use codemafia::player::role::CodeMafiaRole;
+use codemafia::player::role::CodeMafiaRoleTitle;
+use codemafia::messages::game::Team;
 
 use super::GameServer;
 

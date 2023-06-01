@@ -1,4 +1,4 @@
-use crate::{player::{PlayerId, role::CodeMafiaRoleTitle}, events::{SEND_ERROR_MSG, Event, Recipient, EventContent, game::{GameEvents, GameOutcome, WinCondition}}, wordbank::{WordType, NUM_BLUE_WORDS, NUM_RED_WORDS}, messages::game::Team};
+use codemafia::{player::{PlayerId, role::CodeMafiaRoleTitle}, events::{SEND_ERROR_MSG, Event, Recipient, EventContent, game::{GameEvents, GameOutcome, WinCondition}}, wordbank::{WordType, NUM_BLUE_WORDS, NUM_RED_WORDS}, messages::game::Team};
 
 use super::GameServer;
 

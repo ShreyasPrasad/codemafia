@@ -6,19 +6,19 @@
     using some concurrency primitive (see the use of Dashmap in mod.rs).
 */
 
-use crate::events::chat::{ChatMessageEvent, ChatEvents};
-use crate::events::room::{RoomEvents, You};
-use crate::events::{Event, Recipient, EventContent, SEND_ERROR_MSG};
+use codemafia::events::chat::{ChatMessageEvent, ChatEvents};
+use codemafia::events::room::{RoomEvents, You};
+use codemafia::events::{Event, Recipient, EventContent, SEND_ERROR_MSG};
 use crate::game::GameServer;
-use crate::messages::internal::InternalMessage;
-use crate::messages::{Message, ClientMessage, Message::Client, Message::Internal};
-use crate::messages::chat::ChatMessage;
-use crate::messages::game::GameMessage;
-use crate::messages::room::{RoomMessage, RoomMessageAction};
-use crate::player::PlayerId;
-use crate::player::Player;
-use crate::wordbank::Game;
-use crate::wordbank::creator::Creator;
+use codemafia::messages::internal::InternalMessage;
+use codemafia::messages::{Message, ClientMessage, Message::Client, Message::Internal};
+use codemafia::messages::chat::ChatMessage;
+use codemafia::messages::game::GameMessage;
+use codemafia::messages::room::{RoomMessage, RoomMessageAction};
+use codemafia::player::PlayerId;
+use codemafia::player::Player;
+use codemafia::wordbank::Game;
+use codemafia::wordbank::creator::Creator;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 

@@ -45,3 +45,6 @@ pub enum WinCondition {
     WordsCompleted,
     UndercoverOperativeGuessed
 }
+
+// Create a convenience aliasing type
+pub type RoomCode = String;

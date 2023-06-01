@@ -9,6 +9,7 @@
 */
 
 use std::{collections::HashMap, sync::{Arc, Mutex}};
+use codemafia::{events::game::RoomCode, wordbank::creator::Creator};
 use rand::{Rng, rngs::ThreadRng}; // 0.8
 
 pub mod room;
@@ -16,7 +17,7 @@ pub mod dispatcher;
 pub mod player;
 pub mod bridge;
 
-use crate::{manager::room::{Room, MessageSender}, wordbank::creator::Creator};
+use crate::manager::room::{Room, MessageSender};
 
 /* Constants used to define the RNG that generates game codes that are distributed to player. */
 const ROOM_CODE_CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -26,9 +27,6 @@ pub struct RoomManager {
     rooms: HashMap<RoomCode, Room>,
     game_creator: Arc<Mutex<Creator>>
 }
-
-// Create a convenience aliasing type
-pub type RoomCode = String;
 
 impl RoomManager {
     pub fn new() -> Self {

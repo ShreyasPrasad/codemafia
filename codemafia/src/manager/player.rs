@@ -1,12 +1,12 @@
 use super::room::RoomController;
 
-use crate::events::player::PlayerEvents;
-use crate::events::room::{RoomState, PlayerOnTeam, RoomEvents};
-use crate::events::{Event, Recipient, EventContent, SEND_ERROR_MSG};
-use crate::messages::game::Team;
-use crate::player::role::{CodeMafiaRole, CodeMafiaRoleTitle};
-use crate::player::{PlayerId, PlayerError};
-use crate::player::Player;
+use codemafia::events::player::PlayerEvents;
+use codemafia::events::room::{RoomState, PlayerOnTeam, RoomEvents};
+use codemafia::events::{Event, Recipient, EventContent, SEND_ERROR_MSG};
+use codemafia::messages::game::Team;
+use codemafia::player::role::{CodeMafiaRole, CodeMafiaRoleTitle};
+use codemafia::player::{PlayerId, PlayerError};
+use codemafia::player::Player;
 use tokio::sync::mpsc::Sender;
 
 /* Player-specific room controller methods. */

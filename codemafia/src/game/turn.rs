@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use crate::{messages::game::Team, events::game::TeamTurn, player::{PlayerId, Player}};
+use codemafia::{messages::game::Team, events::game::TeamTurn, player::{PlayerId, Player, role::CodeMafiaRoleTitle}};
+use codemafia::{events::{game::GameEvents, Event, EventContent, SEND_ERROR_MSG}};
+use codemafia::events::Recipient;
 use dashmap::DashMap;
 use itertools::interleave;
-use crate::{events::{game::GameEvents, Event, EventContent, SEND_ERROR_MSG}};
-use crate::events::Recipient;
 
 use super::GameServer;
 
@@ -18,7 +18,7 @@ impl GameServer {
         players.iter().for_each(|player| {
             if let Some(player_role) = &player.role {
                 /* Include both undercover operatives and allies. */
-                if player_role.role_title != Some(crate::player::role::CodeMafiaRoleTitle::SpyMaster) {
+                if player_role.role_title != Some(CodeMafiaRoleTitle::SpyMaster) {
                     match player_role.team {
                         Team::Blue => blue_ally_player_ids.push((Team::Blue, player.player_id.to_string())),
                         Team::Red => red_ally_player_ids.push((Team::Red, player.player_id.to_string()))

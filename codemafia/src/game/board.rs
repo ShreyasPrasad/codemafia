@@ -1,7 +1,7 @@
 use std::vec;
 
-use crate::{events::{game::{OpaqueBoard, OpaqueWord, GameEvents}, Event, EventContent, SEND_ERROR_MSG}, player::role::{CodeMafiaRole, CodeMafiaRoleTitle}, messages::game::Team};
-use crate::events::Recipient;
+use codemafia::{events::{game::{OpaqueBoard, OpaqueWord, GameEvents}, Event, EventContent, SEND_ERROR_MSG}, player::role::{CodeMafiaRole, CodeMafiaRoleTitle}, messages::game::Team};
+use codemafia::events::Recipient;
 
 use super::GameServer;
 
