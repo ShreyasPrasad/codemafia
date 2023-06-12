@@ -4,14 +4,12 @@ use rand::rngs::ThreadRng;
 use rand::seq::IteratorRandom;
 use rand::thread_rng;
 
-use codemafia::events::Event;
-use codemafia::events::EventContent;
-use codemafia::events::Recipient;
-use codemafia::events::SEND_ERROR_MSG;
-use codemafia::events::game::GameEvents;
-use codemafia::player::role::CodeMafiaRole;
-use codemafia::player::role::CodeMafiaRoleTitle;
-use codemafia::messages::game::Team;
+use crate::misc::events::{Event, Recipient, SEND_ERROR_MSG};
+use shared::events::EventContent;
+use shared::events::game::GameEvents;
+use shared::player::role::CodeMafiaRole;
+use shared::player::role::CodeMafiaRoleTitle;
+use shared::messages::game::Team;
 
 use super::GameServer;
 
@@ -26,7 +24,7 @@ impl GameServer {
         let mut num_spymasters = 0;
         // Conduct some basic pre-game checks
         self.players.iter().for_each(|player| {
-            if let Some(role) = &player.role {
+            if let Some(role) = &player.meta.role {
                 if role.team == Team::Blue {
                     num_blue = num_blue + 1;
                 } else {
@@ -63,7 +61,7 @@ impl GameServer {
         let mut red_player_assigned: bool = false;
         loop {
             let mut player = self.players.iter_mut().choose(&mut rng).unwrap();
-            if let Some(role) = &mut player.role {
+            if let Some(role) = &mut player.meta.role {
                 if let Some(role_title) = role.role_title {
                     if role_title != CodeMafiaRoleTitle::SpyMaster {
                         if role.team == Team::Red && !red_player_assigned {

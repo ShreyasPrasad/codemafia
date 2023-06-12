@@ -1,6 +1,6 @@
 use tokio::sync::{mpsc::Sender, oneshot};
 
-use crate::{player::PlayerId, events::{EventContent, room::You}};
+use shared::{player::PlayerId, events::{EventContent, room::You}};
 
 /* This enum consists of messages sent without an active player context established, such as when 
 a player joins for the first time or reconnects. */

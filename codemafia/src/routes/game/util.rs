@@ -4,31 +4,31 @@ use axum::{
     },
 };
 
-use codemafia::{events::{game::{RoomCode, GameEvents}, EventContent}, messages::{ClientMessage, Message}};
+use shared::{events::{game::{RoomCode, GameEvents}, EventContent}, messages::Message};
 //allows to split the websocket stream into separate TX and RX branches
 use futures::{stream::StreamExt, SinkExt};
 use tokio::sync::mpsc::{Receiver, error::SendError};
 
 use std::{net::SocketAddr, sync::Arc};
 
-use crate::{manager::room::MessageSender, routes::AppState};
+use crate::{manager::{room::MessageSender, controllers::internal::InternalSender}, routes::AppState, misc::internal::InternalMessage};
 
 pub const PLAYER_MSPC_BUFFER_SIZE: usize = 4;
 
-pub fn get_room_sender(state: Arc<AppState>, code: RoomCode) -> Option<MessageSender> {
+pub fn get_handles(state: Arc<AppState>, code: RoomCode) -> Option<(MessageSender, InternalSender)> {
     // check if the game exists
-    let mut room_handle: Option<MessageSender> = None;
+    let mut handles_opt: Option<(MessageSender, InternalSender)> = None;
     {
         match state.manager.read() {
             Ok(manager_lock) => {
-                room_handle = manager_lock.get_room_handle(code)
+                handles_opt = manager_lock.get_handles(code);
             },
             Err(err) => {
                 println!("Error encountered when acquiring manager RwLock in read mode: {}", err);
             } 
         }
     }
-    room_handle
+    handles_opt
 }
 
 pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sender: MessageSender, mut rx: Receiver<EventContent>) {
@@ -75,9 +75,9 @@ pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sen
             match msg.to_text() {
                 Ok(msg_text) => {
                     cnt = cnt + 1;
-                    match serde_json::from_str::<ClientMessage>(msg_text) {
+                    match serde_json::from_str::<Message>(msg_text) {
                         Ok(msg_struct) => {
-                            if let Err(err) = event_sender.send(Message::Client(msg_struct)).await {
+                            if let Err(err) = event_sender.send(msg_struct).await {
                                 println!("Error sending client message to room: {}", err);
                             }
                         },
@@ -119,7 +119,7 @@ pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sen
 }
 
 /// Actual websocket statemachine (one will be spawned per connection)
-pub async fn init_socket(socket: WebSocket, who: SocketAddr, msg_sender: MessageSender, rx: Receiver<EventContent>, create_result: Result<(), SendError<Message>>) {
+pub async fn init_socket(socket: WebSocket, who: SocketAddr, msg_sender: MessageSender, rx: Receiver<EventContent>, create_result: Result<(), SendError<InternalMessage>>) {
     if let Err(err) = create_result {
         println!("Error creating player: {}. Closing socket.", err);
         if let Err(s_err) = socket.close().await {

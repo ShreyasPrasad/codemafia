@@ -10,11 +10,12 @@ use std::sync::Arc;
 
 use dashmap::DashMap;
 use futures::Future;
+use shared::elements::Game;
 
 use crate::manager::bridge::RoomToGameBridge;
-use codemafia::messages::game::GameMessageAction;
-use codemafia::player::{PlayerId, Player};
-use codemafia::wordbank::Game;
+use crate::misc::player::ActivePlayer;
+use shared::messages::game::GameMessageAction;
+use shared::player::PlayerId;
 
 use self::turn::TurnStateMachine;
 use self::word::GameState;
@@ -29,7 +30,7 @@ pub struct GameServer {
     /* The owned, generated game. */
     game: Game,
     bridge: RoomToGameBridge,
-    players: Arc<DashMap<PlayerId, Player>>,
+    players: Arc<DashMap<PlayerId, ActivePlayer>>,
     turn_state: TurnStateMachine, /* The coordinator ordering, using player ID strings. */
     game_state: GameState
 }
@@ -37,7 +38,7 @@ pub struct GameServer {
 /* Contains message handling corresponding to game actions. */
 impl GameServer {
 
-    pub fn new(game: Game, bridge: RoomToGameBridge, players: Arc<DashMap<PlayerId, Player>>) -> Self {
+    pub fn new(game: Game, bridge: RoomToGameBridge, players: Arc<DashMap<PlayerId, ActivePlayer>>) -> Self {
         GameServer { 
             game, 
             bridge, 

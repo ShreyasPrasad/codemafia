@@ -1,5 +1,5 @@
-use codemafia::{player::{PlayerId, role::CodeMafiaRoleTitle}, events::{SEND_ERROR_MSG, Event, Recipient, EventContent, game::{GameEvents, GameOutcome, WinCondition}}, wordbank::{WordType, NUM_BLUE_WORDS, NUM_RED_WORDS}, messages::game::Team};
-
+use shared::{player::{PlayerId, role::CodeMafiaRoleTitle}, events::{EventContent, game::{GameEvents, GameOutcome, WinCondition}}, messages::game::Team, elements::{WordType, NUM_BLUE_WORDS, NUM_RED_WORDS}};
+use crate::misc::events::{Event, Recipient, SEND_ERROR_MSG};
 use super::GameServer;
 
 #[derive(Default)]
@@ -57,7 +57,7 @@ impl GameServer {
         let (team, _) = self.turn_state.get_current_turn();
 
         let player = &self.players.get(&player_id).unwrap();
-        match &player.role {
+        match &player.meta.role {
             Some(player_role_op) => {
                 if player_role_op.team != team {
                     println!("Received a word hint message for an incorrect player with ID: {}", player_id);
@@ -66,7 +66,7 @@ impl GameServer {
                 self.bridge.room_channel_tx.send(
                     Event {
                         recipient: Recipient::All,
-                        content: EventContent::Game(GameEvents::WordSuggested(player.name.clone().unwrap(), word_index))
+                        content: EventContent::Game(GameEvents::WordSuggested(player.meta.name.clone().unwrap(), word_index))
                     }
                 ).await.expect(SEND_ERROR_MSG);
             },
@@ -80,7 +80,7 @@ impl GameServer {
         // Make sure the correct spymaster is sending a hint.
         let (team, _) = self.turn_state.get_current_turn();
 
-        let player_role_op = &self.players.get(&player_id).unwrap().role;
+        let player_role_op = &self.players.get(&player_id).unwrap().meta.role;
 
         match player_role_op {
             Some(player_role) => {

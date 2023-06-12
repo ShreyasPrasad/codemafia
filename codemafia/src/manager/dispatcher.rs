@@ -3,7 +3,8 @@ use std::sync::Arc;
 use dashmap::DashMap;
 use tokio::sync::mpsc::{Sender, self};
 
-use codemafia::{events::{Event, Recipient, SEND_ERROR_MSG}, player::{Player, PlayerId}};
+use shared::player::PlayerId;
+use crate::misc::{events::{Event, Recipient, SEND_ERROR_MSG}, player::ActivePlayer};
 
 pub struct EventDispatcher {
    event_sender: Sender<Event>
@@ -12,7 +13,7 @@ pub struct EventDispatcher {
 const EVENT_DISPATCHER_CHANNEL_SIZE: usize = 32;
 
 impl EventDispatcher {
-    pub fn new(players: Arc<DashMap<PlayerId, Player>>) -> EventDispatcher {
+    pub fn new(players: Arc<DashMap<PlayerId, ActivePlayer>>) -> EventDispatcher {
         let (tx, mut rx) = mpsc::channel::<Event>(EVENT_DISPATCHER_CHANNEL_SIZE);
         let players_clone = players.clone();
         tokio::spawn(async move {
@@ -29,13 +30,13 @@ impl EventDispatcher {
 }
 
 /* This method sends the event to the included recipient (1 or more players). */
-fn dispatch_event(players_clone: Arc<DashMap<PlayerId, Player>>, event: Event) {
+fn dispatch_event(players_clone: Arc<DashMap<PlayerId, ActivePlayer>>, event: Event) {
     match event.recipient {
         Recipient::All => {
             /* Todo: parallelize event sending by assigning each event send to a new Tokio task. */
             tokio::spawn(async move {
                     for p_ref in players_clone.iter() {
-                        p_ref.channel.event_sender.send(event.content.clone())
+                        p_ref.connection.event_sender.send(event.content.clone())
                             .await.expect(SEND_ERROR_MSG);
                     }
                 }  
@@ -44,9 +45,9 @@ fn dispatch_event(players_clone: Arc<DashMap<PlayerId, Player>>, event: Event) {
         Recipient::SingleRoleList(roles) => {
             tokio::spawn(async move {
                 for p_ref in players_clone.iter() {
-                    if let Some(player_role) = &p_ref.role {
+                    if let Some(player_role) = &p_ref.meta.role {
                         if roles.contains(&player_role){
-                            p_ref.channel.event_sender.send(event.content.clone())
+                            p_ref.connection.event_sender.send(event.content.clone())
                                 .await.expect(SEND_ERROR_MSG);
                         }
                     }
@@ -55,8 +56,8 @@ fn dispatch_event(players_clone: Arc<DashMap<PlayerId, Player>>, event: Event) {
         Recipient::SinglePlayerList(players_by_id) => {
             tokio::spawn(async move {
                 for p_ref in players_clone.iter() {
-                    if players_by_id.contains(&p_ref.player_id) {
-                        p_ref.channel.event_sender.send(event.content.clone())
+                    if players_by_id.contains(&p_ref.meta.player_id) {
+                        p_ref.connection.event_sender.send(event.content.clone())
                                 .await.expect(SEND_ERROR_MSG);
                     }
                 }

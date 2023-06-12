@@ -9,15 +9,17 @@
 */
 
 use std::{collections::HashMap, sync::{Arc, Mutex}};
-use codemafia::{events::game::RoomCode, wordbank::creator::Creator};
+use shared::events::game::RoomCode;
 use rand::{Rng, rngs::ThreadRng}; // 0.8
 
 pub mod room;
 pub mod dispatcher;
-pub mod player;
 pub mod bridge;
+pub mod controllers;
 
-use crate::manager::room::{Room, MessageSender};
+use crate::{manager::room::{Room, MessageSender}, creator::Creator};
+
+use self::controllers::internal::InternalSender;
 
 /* Constants used to define the RNG that generates game codes that are distributed to player. */
 const ROOM_CODE_CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -47,10 +49,18 @@ impl RoomManager {
         self.rooms.remove(&room_code);
     }
 
-    /* Invoked to obtain the RoomSender for a particular game room; returns None if the room doesn't exist. */
-    pub fn get_room_handle(&self, room_code: RoomCode) -> Option<MessageSender> {
+    /* Invoked to obtain the shared sender for a particular game room; returns None if the room doesn't exist. */
+    pub fn get_shared_sender(&self, room_code: RoomCode) -> Option<MessageSender> {
         match self.rooms.get(&room_code) {
-            Some(room) => Some(room.get_room_sender()),
+            Some(room) => Some(room.get_shared_sender()),
+            None => None
+        }
+    }
+
+    /* Invoked to obtain the shared and internal sender for a particular game room; returns None if the room doesn't exist. */
+    pub fn get_handles(&self, room_code: RoomCode) -> Option<(MessageSender, InternalSender)> {
+        match self.rooms.get(&room_code) {
+            Some(room) => Some((room.get_shared_sender(), room.get_internal_sender())),
             None => None
         }
     }

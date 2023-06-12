@@ -2,8 +2,8 @@
 The benefit of this approach is that game server logic and player/room management are not coupled (SOC). */
 
 use tokio::sync::mpsc::{Receiver, Sender};
-
-use codemafia::{events::Event, messages::game::GameMessage};
+use shared::messages::game::GameMessage;
+use crate::misc::events::Event;
 
 pub struct RoomToGameBridge {
     /* Used by the room to send game messages to the game server. */

@@ -14,7 +14,7 @@ use self::role::CodeMafiaRole;
 /* Convenient alias for the player ID. */
 pub type PlayerId = Uuid;
 
-pub struct Player {
+pub struct PlayerMetadata {
     /* The player's unique ID. */
     pub player_id: PlayerId,
     /* The player's role. */
@@ -23,9 +23,9 @@ pub struct Player {
     pub name: Option<String>,
 }
 
-impl Player {
+impl PlayerMetadata {
     pub fn new(name: String) -> Self {
-        Player {
+        PlayerMetadata {
             role: None,
             name: Some(name),
             player_id: Uuid::new_v4()
@@ -34,17 +34,17 @@ impl Player {
 }
 
 /* Blanket Eq impl for Player. */
-impl Eq for Player {}
+impl Eq for PlayerMetadata {}
 
 /* Allow Player to be used in hash-based data structures like HashSet, using the 
 underlying player ID UUID as the key. */ 
-impl PartialEq for Player {
+impl PartialEq for PlayerMetadata {
     fn eq(&self, other: &Self) -> bool {
         self.player_id == other.player_id
     }
 }
 
-impl Hash for Player {
+impl Hash for PlayerMetadata {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.player_id.hash(state)
     }

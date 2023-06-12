@@ -6,28 +6,18 @@
     using some concurrency primitive (see the use of Dashmap in mod.rs).
 */
 
-use codemafia::events::chat::{ChatMessageEvent, ChatEvents};
-use codemafia::events::room::{RoomEvents, You};
-use codemafia::events::{Event, Recipient, EventContent, SEND_ERROR_MSG};
-use crate::game::GameServer;
-use codemafia::messages::internal::InternalMessage;
-use codemafia::messages::{Message, ClientMessage, Message::Client, Message::Internal};
-use codemafia::messages::chat::ChatMessage;
-use codemafia::messages::game::GameMessage;
-use codemafia::messages::room::{RoomMessage, RoomMessageAction};
-use codemafia::player::PlayerId;
-use codemafia::player::Player;
-use codemafia::wordbank::Game;
-use codemafia::wordbank::creator::Creator;
-use std::str::FromStr;
+use crate::creator::Creator;
+use crate::misc::internal::InternalMessage;
+use crate::misc::player::ActivePlayer;
+use shared::messages::Message;
+use shared::player::PlayerId;
 use std::sync::{Arc, Mutex};
 
 use dashmap::DashMap;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
-use uuid::Uuid;
-
-use super::bridge::RoomToGameBridge;
+use super::controllers::internal::{InternalSender, INTERNAL_MSPC_BUFFER_SIZE, InternalController};
+use super::controllers::shared::SharedController;
 use super::dispatcher::EventDispatcher;
 
 /* These are aliases for the room listener and receiver; this is the channel that all players send their actions to.  */
@@ -37,176 +27,59 @@ pub type MessageSender = Sender<Message>;
    appear from, from at most 10-12 players. */
 const ROOM_MSPC_BUFFER_SIZE: usize = 64;
 
-/* A message buffer size of 8 should be more than sufficient as game messages are between 2 agents (the room
-    and the game server). */
-const GAME_MSPC_BUFFER_SIZE: usize = 8;
-
 pub struct Room {
-    /* The clonable sender that the RoomController listens to; available to clients using get_room_sender() below. */
-    sender: MessageSender
+    /* The clonable sender that the RoomController listens to for shared messages; available to clients using get_shared_sender() below. */
+    shared_sender: MessageSender,
+    /* The clonable internal sender that the RoomController listens to; available to clients using get_internal_sender() below. */
+    internal_sender: InternalSender
 }
 
 impl Room {
     /* Initialization of a new room; starts the room, so players can now send messages to be processed. */
     pub fn new(game_creator: Arc<Mutex<Creator>>) -> Self {
+        let shared_sender = Self::start_shared_task(game_creator);
+        let internal_sender = Self::start_internal_task();
+        Room { shared_sender, internal_sender }
+    }
+
+    fn start_shared_task(game_creator: Arc<Mutex<Creator>>) -> MessageSender {
         let (tx, mut rx) = mpsc::channel::<Message>(ROOM_MSPC_BUFFER_SIZE);
         tokio::spawn(async move {
-            let players: Arc<DashMap<PlayerId, Player>> = Arc::new(DashMap::new());
+            let players: Arc<DashMap<PlayerId, ActivePlayer>> = Arc::new(DashMap::new());
             let dispatcher: EventDispatcher = EventDispatcher::new(players.clone());
-            let mut controller: RoomController = RoomController { 
-                players: players.clone(), 
-                owner: None, 
-                active_game: None, 
+            let mut controller: SharedController = SharedController::new(
+                players.clone(),
                 game_creator,
-                event_dispatcher: dispatcher.get_event_sender()
-            };
+                dispatcher.get_event_sender()
+            );
             
             while let Some(message) = rx.recv().await {
                 controller.handle_message(message).await;
             }
         });
-        Room { sender: tx }
+        tx
     }
 
-    pub fn get_room_sender(&self) -> MessageSender {
-        /* Return a clone of the room sender so the new client can send messages. */
-        self.sender.clone()
-    }
-}
-
-/* This struct is responisble for handling room-specific messages sent by players. To see what types of
-messages it handles, look at the match statement below. */
-pub struct RoomController {
-    pub players: Arc<DashMap<PlayerId, Player>>,
-    /* The first player to join the room is assigned owner and is responsible for starting the game. */
-    pub owner: Option<PlayerId>,
-    /* The active game, if any, owned by the room. */
-    active_game: Option<Sender<GameMessage>>,
-    /* The shared game creator. */
-    game_creator: Arc<Mutex<Creator>>,
-    /* The event dispatcher, responsible for forwarding events to players. */
-    pub event_dispatcher: Sender<Event>
-}
-
-impl RoomController {
-    pub async fn handle_message(&mut self, message: Message) {
-        match message {
-            Client(ClientMessage::Chat(chat_message)) => {
-                self.handle_chat_message(chat_message).await;
-            },
-            Client(ClientMessage::Game(game_message)) => {
-                /* Make sure game messages are sent to the game server asynchronously, so we dont block a thread. */
-                self.handle_game_message(game_message).await;
-            },
-            Client(ClientMessage::Room(room_message)) => {
-                self.handle_room_message(room_message).await;
-            },
-            Internal(internal_message) => {
-                self.handle_internal_message(internal_message).await;
-            }
-        };
-    }
-
-    async fn handle_chat_message(&self, message: ChatMessage){
-        /* Relay the chat message to all active players. */
-        self.event_dispatcher.send(
-            Event { 
-                recipient: Recipient::All, 
-                content: EventContent::Chat(ChatEvents::ChatMessageEvent(
-                    ChatMessageEvent{
-                        sender: message.sender,
-                        text: message.text
-                    }
-                )) 
-            }
-        ).await.expect(SEND_ERROR_MSG);
-    }
-
-    async fn handle_game_message(&self, message: GameMessage){
-        if let Some(active_game) = &self.active_game {
-            /* TODO: Figure out a way to not do a blocking send. */
-            if let Err(err) = active_game.send(message).await {
-                println!("Error forwarding game message to server: {}", err);
-            }
-        }
-    }
-
-    async fn handle_room_message(&mut self, message: RoomMessage){
-        match message.action {
-            RoomMessageAction::JoinTeam(player_id, team, is_spymaster) => {
-                let player_id = Uuid::from_str(&player_id).unwrap();
-                /* Update the team and send room state update to all players upon success. */
-                if let Ok(()) = self.update_player_team(player_id, team, is_spymaster) {
-                  self.dispatch_room_state_update().await;
-                } 
-            },
-            RoomMessageAction::StartGame => {
-                /* Create the new game. */
-                self.start_game().await;
-                self.event_dispatcher.send(
-                    Event {
-                        recipient: Recipient::All,
-                        content: EventContent::Room(RoomEvents::GameStarted)
-                    }
-                ).await.expect(SEND_ERROR_MSG);
-            }
-        };
-    }
-
-    async fn handle_internal_message(&mut self, message: InternalMessage){
-        match message {
-            InternalMessage::NewPlayer(player_name, event_sender) => {
-                let player: Player = self.create_player(player_name, event_sender);
-                /* Set the player cookie. */
-                self.set_player_cookie(player.player_id).await;
-            },
-            InternalMessage::SessionConnection(player_id, you_receiver) => {
-                match self.players.get(&player_id) {
-                    Some(player) => {
-                        you_receiver.send(Some(You{
-                            name: player.name.clone(),
-                            id: player.player_id.to_string()
-                        })).expect(SEND_ERROR_MSG);
-                    },
-                    None => {
-                        you_receiver.send(None).expect(SEND_ERROR_MSG);
-                    }
-                }
-                /* Set the player cookie. */
-                self.set_player_cookie(player_id).await;
-            },
-            InternalMessage::UpdatePlayer(player_id, event_sender) => {
-                if let Err(err) = self.update_player(player_id, event_sender) {
-                    println!("Error updating player: {}", err);
-                }
-                /* Set the player cookie. */
-                self.set_player_cookie(player_id).await;
-            }
-        }
-        /* Update the players after all the actions above. */
-        self.dispatch_room_state_update().await;
-    }
-
-    async fn start_game(&mut self) {
-        let game: Game;
-        /* Make sure we are not holding a MutexGuard across an .await call. */
-        {
-            let mut sync_game_creator = self.game_creator.lock().unwrap();
-            /* Create a new game for the room. */
-            game = sync_game_creator.get_game();
-        }
-        let (game_channel_tx, game_channel_rx) = mpsc::channel::<GameMessage>(GAME_MSPC_BUFFER_SIZE);
-        /* Construct the room-to-game bridge. */
-        let bridge: RoomToGameBridge = RoomToGameBridge { game_channel_rx, room_channel_tx: self.event_dispatcher.clone() };
-        /* Create the game server. */
-        let mut game_server: GameServer = GameServer::new(game, bridge, self.players.clone());
-        /* Initialize the game. */
-        game_server.init_game().await;
-        /* Start the game loop. */
+    fn start_internal_task() -> InternalSender {
+        let (tx, mut rx) = mpsc::channel::<InternalMessage>(INTERNAL_MSPC_BUFFER_SIZE);
         tokio::spawn(async move {
-            game_server.start_game_loop().await;
+            let players: Arc<DashMap<PlayerId, ActivePlayer>> = Arc::new(DashMap::new());
+            let dispatcher: EventDispatcher = EventDispatcher::new(players.clone());
+            let mut controller: InternalController = InternalController::new(players, dispatcher.get_event_sender());
+            while let Some(message) = rx.recv().await {
+                controller.handle_message(message).await;
+            }
         });
-        /* Save the message sender so we can forward game messages received from players. */
-        self.active_game = Some(game_channel_tx);   
+        tx
+    }
+
+    pub fn get_shared_sender(&self) -> MessageSender {
+        /* Return a clone of the room sender so the new client can send messages. */
+        self.shared_sender.clone()
+    }
+
+    pub fn get_internal_sender(&self) -> InternalSender {
+        /* Return a clone of the room sender so the new client can send messages. */
+        self.internal_sender.clone()
     }
 }

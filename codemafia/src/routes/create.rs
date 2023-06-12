@@ -5,7 +5,7 @@ use axum::{
 
 use std::sync::Arc;
 
-use codemafia::events::game::RoomCode;
+use shared::events::game::RoomCode;
 
 use super::AppState;
 

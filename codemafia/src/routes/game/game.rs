@@ -9,8 +9,8 @@ use axum::{
 //allows to extract the IP of connecting user
 use axum::extract::connect_info::ConnectInfo;
 
-use codemafia::{events::{game::RoomCode, EventContent}, messages::internal::InternalMessage};
-use codemafia::messages::Message::Internal;
+use shared::events::{game::RoomCode, EventContent};
+use crate::{misc::internal::InternalMessage, manager::controllers::internal::InternalSender};
 //allows to split the websocket stream into separate TX and RX branches
 use tokio::sync::mpsc;
 
@@ -34,11 +34,11 @@ pub async fn game_route_handler(
 ) -> impl IntoResponse {
 
     // check if the game exists
-    let mut room_handle: Option<MessageSender> = None;
+    let mut handles_option: Option<(MessageSender, InternalSender)> = None;
     {
         match state.manager.read() {
             Ok(manager_lock) => {
-                room_handle = manager_lock.get_room_handle(code)
+                handles_option = manager_lock.get_handles(code);
             },
             Err(err) => {
                 println!("Error encountered when acquiring manager RwLock in read mode: {}", err);
@@ -47,20 +47,20 @@ pub async fn game_route_handler(
     }
 
     /* Check if the room exists. */
-    match room_handle {
+    match handles_option {
         /* If the room exists, upgrade the websocket connection. */
-        Some(sender) => ws.on_upgrade(
-            move |socket| handle_socket(socket, addr, sender, new_player_fields.name)),
+        Some(handles) => ws.on_upgrade(
+            move |socket| handle_socket(socket, addr, handles, new_player_fields.name)),
         None => (StatusCode::NOT_FOUND, "Room not found.").into_response()
     }
 }
 
 /// Actual websocket statemachine (one will be spawned per connection)
-async fn handle_socket(socket: WebSocket, who: SocketAddr, msg_sender: MessageSender, player_name: String) {
+async fn handle_socket(socket: WebSocket, who: SocketAddr, handles: (MessageSender, InternalSender), player_name: String) {
     // pass the current game state to the player, including existing player state if they are reconnecting
     let (tx, rx) = mpsc::channel::<EventContent>(PLAYER_MSPC_BUFFER_SIZE);
-    let player_creation_result  = msg_sender.send(Internal(InternalMessage::NewPlayer(player_name, tx)))
+    let player_creation_result  = handles.1.send(InternalMessage::NewPlayer(player_name, tx))
     .await;
 
-    init_socket(socket, who, msg_sender, rx, player_creation_result).await;
+    init_socket(socket, who, handles.0, rx, player_creation_result).await;
 }

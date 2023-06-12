@@ -1,27 +1,27 @@
 use std::sync::Arc;
 
-use codemafia::{messages::game::Team, events::game::TeamTurn, player::{PlayerId, Player, role::CodeMafiaRoleTitle}};
-use codemafia::{events::{game::GameEvents, Event, EventContent, SEND_ERROR_MSG}};
-use codemafia::events::Recipient;
+use shared::{messages::game::Team, events::game::TeamTurn, player::{PlayerId, role::CodeMafiaRoleTitle}};
+use shared::{events::{game::GameEvents, EventContent}};
 use dashmap::DashMap;
 use itertools::interleave;
+use crate::misc::{events::{Event, Recipient, SEND_ERROR_MSG}, player::ActivePlayer};
 
 use super::GameServer;
 
 /* Game-turn specific event handling. */
 impl GameServer {
-    pub fn get_turn_state_machine(players: Arc<DashMap<PlayerId, Player>>) -> TurnStateMachine {
+    pub fn get_turn_state_machine(players: Arc<DashMap<PlayerId, ActivePlayer>>) -> TurnStateMachine {
         /* Determine the coordinator order by interweaving the blue and red ally players. */
         let mut blue_ally_player_ids: Vec<(Team, String)> = vec![];
         let mut red_ally_player_ids: Vec<(Team, String)> = vec![];
         
         players.iter().for_each(|player| {
-            if let Some(player_role) = &player.role {
+            if let Some(player_role) = &player.meta.role {
                 /* Include both undercover operatives and allies. */
                 if player_role.role_title != Some(CodeMafiaRoleTitle::SpyMaster) {
                     match player_role.team {
-                        Team::Blue => blue_ally_player_ids.push((Team::Blue, player.player_id.to_string())),
-                        Team::Red => red_ally_player_ids.push((Team::Red, player.player_id.to_string()))
+                        Team::Blue => blue_ally_player_ids.push((Team::Blue, player.meta.player_id.to_string())),
+                        Team::Red => red_ally_player_ids.push((Team::Red, player.meta.player_id.to_string()))
                     }
                 }
             }

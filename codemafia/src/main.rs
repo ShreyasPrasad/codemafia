@@ -5,6 +5,8 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod manager;
 mod game;
 mod routes;
+mod creator;
+mod misc;
 
 use crate::routes::build_routes;
 

@@ -1,12 +1,12 @@
 /* Creator
   
- This module reads word lists to assemble an in memory list of words that can be used in 
- new codemafia games. 
+ The Creator module is reponsible for generating 25 words that can constitute a valid codemafia game.
+ It assembles a complete list of words in memory and uses them to assemble valid codemafia games upon
+ request. The data structures that make up a game are defined in this module, along with the logic to
+ populate them.
 
  */
 
-
-use super::*;
 use std::fs::File;
 use std::io::{prelude::*, BufReader};
 use std::collections::HashSet;
@@ -15,6 +15,7 @@ use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
 use rand::prelude::*;
 use clap::Parser;
+use shared::elements::{Game, Word, WordType, Board};
 
 const MINIMUM_WORDBANK_SIZE: usize = 200;
 const NUMBER_OF_WORDS_IN_GAME: usize = 25;
