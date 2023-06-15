@@ -101,7 +101,6 @@ impl Creator {
     fn get_all_words() -> Result<Vec<String>, CreatorError> {
         // collect all words into map to prevent accepting duplicates
         let mut word_map: HashSet<String> = HashSet::new();
-        let lol = 3;
         let args = Args::parse();
         let file = File::open(args.words);
         match file {
