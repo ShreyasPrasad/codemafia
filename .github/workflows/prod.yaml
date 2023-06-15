@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build-app:
 
     runs-on: ubuntu-latest
 
@@ -31,3 +31,16 @@ jobs:
       run: cd app && npm ci && trunk build
     - name: Test
       run: cd app && cargo test
+
+  build-codemafia:
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: cd codemafia && cargo build --verbose
+      - name: Test
+        run: cd codemafia && cargo test --verbose
+
+    
