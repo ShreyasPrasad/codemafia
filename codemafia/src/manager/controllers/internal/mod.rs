@@ -2,10 +2,14 @@
 use std::sync::Arc;
 
 use dashmap::DashMap;
-use shared::{player::PlayerId, events::room::You};
+use shared::{events::room::You, player::PlayerId};
 use tokio::sync::mpsc::Sender;
 
-use crate::misc::{player::ActivePlayer, events::{Event, SEND_ERROR_MSG}, internal::InternalMessage};
+use crate::misc::{
+    events::{Event, SEND_ERROR_MSG},
+    internal::InternalMessage,
+    player::ActivePlayer,
+};
 
 use super::util::dispatch_room_state_update;
 
@@ -28,31 +32,37 @@ pub struct InternalController {
 
 impl InternalController {
     pub fn new(players: Arc<DashMap<PlayerId, ActivePlayer>>, event_sender: Sender<Event>) -> Self {
-        InternalController { players, owner: None, event_sender }
+        InternalController {
+            players,
+            owner: None,
+            event_sender,
+        }
     }
 
-    pub async fn handle_message(&mut self, message: InternalMessage){
+    pub async fn handle_message(&mut self, message: InternalMessage) {
         match message {
             InternalMessage::NewPlayer(player_name, event_sender) => {
                 let player: ActivePlayer = self.create_player(player_name, event_sender);
                 /* Set the player cookie. */
                 self.set_player_cookie(player.meta.player_id).await;
-            },
+            }
             InternalMessage::SessionConnection(player_id, you_receiver) => {
                 match self.players.get(&player_id) {
                     Some(player) => {
-                        you_receiver.send(Some(You {
-                            name: player.meta.name.clone(),
-                            id: player.meta.player_id.to_string()
-                        })).expect(SEND_ERROR_MSG);
-                    },
+                        you_receiver
+                            .send(Some(You {
+                                name: player.meta.name.clone(),
+                                id: player.meta.player_id.to_string(),
+                            }))
+                            .expect(SEND_ERROR_MSG);
+                    }
                     None => {
                         you_receiver.send(None).expect(SEND_ERROR_MSG);
                     }
                 }
                 /* Set the player cookie. */
                 self.set_player_cookie(player_id).await;
-            },
+            }
             InternalMessage::UpdatePlayer(player_id, event_sender) => {
                 if let Err(err) = self.update_player_connection(player_id, event_sender) {
                     println!("Error updating player: {}", err);

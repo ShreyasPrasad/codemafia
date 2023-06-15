@@ -2,11 +2,11 @@ use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 // Declare the project's private submodules.
-mod manager;
-mod game;
-mod routes;
 mod creator;
+mod game;
+mod manager;
 mod misc;
+mod routes;
 
 use crate::routes::build_routes;
 
@@ -19,7 +19,7 @@ async fn main() {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
-    
+
     // import the app router
     let app_router = build_routes();
 

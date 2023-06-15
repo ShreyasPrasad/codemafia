@@ -1,37 +1,54 @@
-use axum::{
-    extract::{
-        ws::{Message as AxumMessage, WebSocket},
-    },
-};
+use axum::extract::ws::{Message as AxumMessage, WebSocket};
 
-use shared::{events::{game::{RoomCode, GameEvents}, EventContent}, messages::Message};
+use shared::{
+    events::{
+        game::{GameEvents, RoomCode},
+        EventContent,
+    },
+    messages::Message,
+};
 //allows to split the websocket stream into separate TX and RX branches
 use futures::{stream::StreamExt, SinkExt};
-use tokio::sync::mpsc::{Receiver, error::SendError};
+use tokio::sync::mpsc::{error::SendError, Receiver};
 
 use std::{net::SocketAddr, sync::Arc};
 
-use crate::{manager::{room::MessageSender, controllers::internal::InternalSender}, routes::AppState, misc::internal::InternalMessage};
+use crate::{
+    manager::{controllers::internal::InternalSender, room::MessageSender},
+    misc::internal::InternalMessage,
+    routes::AppState,
+};
 
 pub const PLAYER_MSPC_BUFFER_SIZE: usize = 4;
 
-pub fn get_handles(state: Arc<AppState>, code: RoomCode) -> Option<(MessageSender, InternalSender)> {
+pub fn get_handles(
+    state: Arc<AppState>,
+    code: RoomCode,
+) -> Option<(MessageSender, InternalSender)> {
     // check if the game exists
     let mut handles_opt: Option<(MessageSender, InternalSender)> = None;
     {
         match state.manager.read() {
             Ok(manager_lock) => {
                 handles_opt = manager_lock.get_handles(code);
-            },
+            }
             Err(err) => {
-                println!("Error encountered when acquiring manager RwLock in read mode: {}", err);
-            } 
+                println!(
+                    "Error encountered when acquiring manager RwLock in read mode: {}",
+                    err
+                );
+            }
         }
     }
     handles_opt
 }
 
-pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sender: MessageSender, mut rx: Receiver<EventContent>) {
+pub async fn spawn_game_connection(
+    socket: WebSocket,
+    who: SocketAddr,
+    event_sender: MessageSender,
+    mut rx: Receiver<EventContent>,
+) {
     // By splitting socket we can send and receive at the same time. In this example we will send
     // unsolicited messages to client based on some sort of server's internal event (i.e .timer).
     let (mut sender, mut receiver) = socket.split();
@@ -47,21 +64,21 @@ pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sen
                     match serde_json::to_string(&content) {
                         Ok(parsed_content) => {
                             cnt = cnt + 1;
-                            if let Err(err) = sender.send(AxumMessage::Text(parsed_content)).await{
+                            if let Err(err) = sender.send(AxumMessage::Text(parsed_content)).await {
                                 println!("Error sending event to player: {}", err);
                             }
                             /* We are done if we read a GameEnded message; exit the send task. */
                             if let EventContent::Game(GameEvents::GameEnded(_)) = content {
                                 break;
                             }
-                        }, 
+                        }
                         Err(err) => {
                             cnt = cnt + 1;
                             println!("Error serializing event content to string {}", err);
                         }
                     }
-                },
-                None => break
+                }
+                None => break,
             }
         }
         cnt
@@ -80,15 +97,18 @@ pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sen
                             if let Err(err) = event_sender.send(msg_struct).await {
                                 println!("Error sending client message to room: {}", err);
                             }
-                        },
+                        }
                         Err(err) => {
                             println!("Error deserializing message from websocket string {}", err);
                         }
                     }
-                },
+                }
                 Err(err) => {
                     cnt = cnt + 1;
-                    println!("Unexpected error decoding client websocket message: {}", err);
+                    println!(
+                        "Unexpected error decoding client websocket message: {}",
+                        err
+                    );
                 }
             }
         }
@@ -119,7 +139,13 @@ pub async fn spawn_game_connection(socket: WebSocket, who: SocketAddr, event_sen
 }
 
 /// Actual websocket statemachine (one will be spawned per connection)
-pub async fn init_socket(socket: WebSocket, who: SocketAddr, msg_sender: MessageSender, rx: Receiver<EventContent>, create_result: Result<(), SendError<InternalMessage>>) {
+pub async fn init_socket(
+    socket: WebSocket,
+    who: SocketAddr,
+    msg_sender: MessageSender,
+    rx: Receiver<EventContent>,
+    create_result: Result<(), SendError<InternalMessage>>,
+) {
     if let Err(err) = create_result {
         println!("Error creating player: {}. Closing socket.", err);
         if let Err(s_err) = socket.close().await {
@@ -127,5 +153,5 @@ pub async fn init_socket(socket: WebSocket, who: SocketAddr, msg_sender: Message
         }
     } else {
         spawn_game_connection(socket, who, msg_sender, rx).await;
-    }    
+    }
 }

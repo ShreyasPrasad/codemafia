@@ -7,5 +7,5 @@ When a player attempts to reconnect to the game, they receive the EventCache, al
 repopulate the game on their client independently. */
 #[derive(Debug, Clone, Serialize)]
 pub struct EventCache {
-    pub events: Vec<EventContent>
+    pub events: Vec<EventContent>,
 }

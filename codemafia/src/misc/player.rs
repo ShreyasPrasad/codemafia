@@ -4,12 +4,12 @@ use uuid::Uuid;
 use super::events::EventSender;
 
 /*
-    This struct represents an active player, which comprises of the basic player struct,
-    along with a stateful player connection.
- */
+   This struct represents an active player, which comprises of the basic player struct,
+   along with a stateful player connection.
+*/
 pub struct ActivePlayer {
     pub meta: PlayerMetadata,
-    pub connection: PlayerConnection
+    pub connection: PlayerConnection,
 }
 
 pub struct PlayerConnection {
@@ -22,7 +22,7 @@ pub struct PlayerConnection {
 pub enum PlayerStatus {
     Connected,
     Disconnected,
-    Abandoned
+    Abandoned,
 }
 
 impl ActivePlayer {
@@ -35,8 +35,8 @@ impl ActivePlayer {
             },
             connection: PlayerConnection {
                 status: PlayerStatus::Connected,
-                event_sender
-            }
+                event_sender,
+            },
         }
     }
 }

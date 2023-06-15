@@ -5,20 +5,20 @@ use rand::seq::IteratorRandom;
 use rand::thread_rng;
 
 use crate::misc::events::{Event, Recipient, SEND_ERROR_MSG};
-use shared::events::EventContent;
 use shared::events::game::GameEvents;
+use shared::events::EventContent;
+use shared::messages::game::Team;
 use shared::player::role::CodeMafiaRole;
 use shared::player::role::CodeMafiaRoleTitle;
-use shared::messages::game::Team;
 
 use super::GameServer;
 
 // Some useful constants.
-const MIN_NUMBER_OF_PLAYERS_ON_TEAM : usize = 4;
+const MIN_NUMBER_OF_PLAYERS_ON_TEAM: usize = 4;
 const MIN_NUMBER_OF_SPYMASTERS: usize = 2;
 
 impl GameServer {
-    pub async fn complete_teams(&self){
+    pub async fn complete_teams(&self) {
         let mut num_blue = 0;
         let mut num_red = 0;
         let mut num_spymasters = 0;
@@ -38,15 +38,18 @@ impl GameServer {
             }
         });
 
-        if num_blue < MIN_NUMBER_OF_PLAYERS_ON_TEAM 
-            || num_red < MIN_NUMBER_OF_PLAYERS_ON_TEAM  
-            || num_spymasters < MIN_NUMBER_OF_SPYMASTERS {
-            self.bridge.room_channel_tx.send(
-                Event {
+        if num_blue < MIN_NUMBER_OF_PLAYERS_ON_TEAM
+            || num_red < MIN_NUMBER_OF_PLAYERS_ON_TEAM
+            || num_spymasters < MIN_NUMBER_OF_SPYMASTERS
+        {
+            self.bridge
+                .room_channel_tx
+                .send(Event {
                     recipient: Recipient::All,
-                    content: EventContent::Game(GameEvents::InSufficientPlayers)
-                }
-            ).await.expect(SEND_ERROR_MSG);
+                    content: EventContent::Game(GameEvents::InSufficientPlayers),
+                })
+                .await
+                .expect(SEND_ERROR_MSG);
         }
 
         // Assign the 2 undercover players randomly.
@@ -73,7 +76,7 @@ impl GameServer {
                             role.role_title = Some(CodeMafiaRoleTitle::Undercover);
                             break;
                         }
-                    }  
+                    }
                 }
             }
         }
@@ -81,22 +84,37 @@ impl GameServer {
 
     async fn send_player_roles(&self) {
         /* Send allies on both teams their ally role. */
-        self.bridge.room_channel_tx.send(
-            Event {
-                recipient: Recipient::SingleRoleList(
-                    vec![CodeMafiaRole { team: Team::Blue, role_title: Some(CodeMafiaRoleTitle::Ally)}]),
-                content: EventContent::Game(GameEvents::RoleUpdated(CodeMafiaRoleTitle::Ally))
-            }
-        ).await.expect(SEND_ERROR_MSG);
+        self.bridge
+            .room_channel_tx
+            .send(Event {
+                recipient: Recipient::SingleRoleList(vec![CodeMafiaRole {
+                    team: Team::Blue,
+                    role_title: Some(CodeMafiaRoleTitle::Ally),
+                }]),
+                content: EventContent::Game(GameEvents::RoleUpdated(CodeMafiaRoleTitle::Ally)),
+            })
+            .await
+            .expect(SEND_ERROR_MSG);
 
         /* Send undercover operatives their role. */
-        self.bridge.room_channel_tx.send(
-            Event {
-                recipient: Recipient::SingleRoleList(
-                    vec![CodeMafiaRole { team: Team::Blue, role_title: Some(CodeMafiaRoleTitle::Undercover)},
-                         CodeMafiaRole { team: Team::Red, role_title: Some(CodeMafiaRoleTitle::Undercover)}]),
-                content: EventContent::Game(GameEvents::RoleUpdated(CodeMafiaRoleTitle::Undercover))
-            }
-        ).await.expect(SEND_ERROR_MSG);
+        self.bridge
+            .room_channel_tx
+            .send(Event {
+                recipient: Recipient::SingleRoleList(vec![
+                    CodeMafiaRole {
+                        team: Team::Blue,
+                        role_title: Some(CodeMafiaRoleTitle::Undercover),
+                    },
+                    CodeMafiaRole {
+                        team: Team::Red,
+                        role_title: Some(CodeMafiaRoleTitle::Undercover),
+                    },
+                ]),
+                content: EventContent::Game(GameEvents::RoleUpdated(
+                    CodeMafiaRoleTitle::Undercover,
+                )),
+            })
+            .await
+            .expect(SEND_ERROR_MSG);
     }
 }

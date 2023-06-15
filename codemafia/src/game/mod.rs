@@ -1,4 +1,4 @@
-/* 
+/*
     Game
 
     This module contains the logic for game completion itself, using the actions and
@@ -20,11 +20,11 @@ use shared::player::PlayerId;
 use self::turn::TurnStateMachine;
 use self::word::GameState;
 
+mod board;
+mod cache;
 mod teams;
 mod turn;
-mod board;
 mod word;
-mod cache;
 
 pub struct GameServer {
     /* The owned, generated game. */
@@ -32,19 +32,22 @@ pub struct GameServer {
     bridge: RoomToGameBridge,
     players: Arc<DashMap<PlayerId, ActivePlayer>>,
     turn_state: TurnStateMachine, /* The coordinator ordering, using player ID strings. */
-    game_state: GameState
+    game_state: GameState,
 }
 
 /* Contains message handling corresponding to game actions. */
 impl GameServer {
-
-    pub fn new(game: Game, bridge: RoomToGameBridge, players: Arc<DashMap<PlayerId, ActivePlayer>>) -> Self {
-        GameServer { 
-            game, 
-            bridge, 
-            players: players.clone(), 
+    pub fn new(
+        game: Game,
+        bridge: RoomToGameBridge,
+        players: Arc<DashMap<PlayerId, ActivePlayer>>,
+    ) -> Self {
+        GameServer {
+            game,
+            bridge,
+            players: players.clone(),
             turn_state: GameServer::get_turn_state_machine(players.clone()),
-            game_state: GameState::default()
+            game_state: GameState::default(),
         }
     }
 
@@ -59,16 +62,16 @@ impl GameServer {
             match cmd.action {
                 GameMessageAction::EndTurn => {
                     self.advance_turn().await;
-                },
+                }
                 GameMessageAction::WordClicked(player_id, index) => {
                     if let Ok(player_id) = uuid::Uuid::from_str(&player_id) {
                         self.handle_word_click(player_id, index).await;
                     }
-                },
+                }
                 GameMessageAction::WordSuggested(player_id, index) => {
                     let fut = |id| self.handle_word_suggested(id, index);
                     Self::proceed_with_valid_player_id(player_id, fut).await;
-                },
+                }
                 GameMessageAction::WordHint(player_id, hint) => {
                     let fut = |id| self.handle_word_hint(id, hint.clone());
                     Self::proceed_with_valid_player_id(player_id, fut).await;
@@ -79,7 +82,7 @@ impl GameServer {
 
     async fn proceed_with_valid_player_id<F, Fut>(player_id: String, f: F)
     where
-        F: FnOnce(PlayerId) -> Fut, 
+        F: FnOnce(PlayerId) -> Fut,
         Fut: Future,
     {
         if let Ok(player_id) = uuid::Uuid::from_str(&player_id) {

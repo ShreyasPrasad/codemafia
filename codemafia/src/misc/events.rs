@@ -1,4 +1,7 @@
-use shared::{events::EventContent, player::{role::CodeMafiaRole, PlayerId}};
+use shared::{
+    events::EventContent,
+    player::{role::CodeMafiaRole, PlayerId},
+};
 use tokio::sync::mpsc;
 
 pub type EventSender = mpsc::Sender<EventContent>;
@@ -7,7 +10,7 @@ pub const SEND_ERROR_MSG: &'static str = "Failed to send channel message";
 #[derive(Debug)]
 pub struct Event {
     pub recipient: Recipient,
-    pub content: EventContent
+    pub content: EventContent,
 }
 
 #[derive(Debug)]
@@ -18,5 +21,5 @@ pub enum Recipient {
     /* Specify the recipients by their player ID. */
     SinglePlayerList(Vec<PlayerId>),
     /* Send to all active players. */
-    All
+    All,
 }
