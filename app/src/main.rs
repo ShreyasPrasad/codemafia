@@ -4,8 +4,8 @@ use app::App;
 use yew::prelude::*;
 
 /* Declare modules. */
-mod pages;
 mod components;
+mod pages;
 
 fn main() {
     yew::Renderer::<App>::new().render();

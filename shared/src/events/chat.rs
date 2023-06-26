@@ -4,7 +4,7 @@ use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 pub enum ChatEvents {
-    ChatMessageEvent(ChatMessageEvent)
+    ChatMessageEvent(ChatMessageEvent),
 }
 
 #[derive(Debug, Clone, Serialize)]

@@ -11,7 +11,7 @@ pub enum Route {
     Landing,
     #[not_found]
     #[at("/404")]
-    LandingDefault
+    LandingDefault,
 }
 
 fn switch_app(routes: Route) -> Html {

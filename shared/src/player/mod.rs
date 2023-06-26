@@ -1,11 +1,14 @@
-/* 
+/*
     Player
- 
+
     Encapsulates basic active player fields with several generic fields
     for custom player implementations.
 */
 
-use std::{hash::{Hash, Hasher}, fmt};
+use std::{
+    fmt,
+    hash::{Hash, Hasher},
+};
 use uuid::Uuid;
 
 pub mod role;
@@ -28,7 +31,7 @@ impl PlayerMetadata {
         PlayerMetadata {
             role: None,
             name: Some(name),
-            player_id: Uuid::new_v4()
+            player_id: Uuid::new_v4(),
         }
     }
 }
@@ -36,8 +39,8 @@ impl PlayerMetadata {
 /* Blanket Eq impl for Player. */
 impl Eq for PlayerMetadata {}
 
-/* Allow Player to be used in hash-based data structures like HashSet, using the 
-underlying player ID UUID as the key. */ 
+/* Allow Player to be used in hash-based data structures like HashSet, using the
+underlying player ID UUID as the key. */
 impl PartialEq for PlayerMetadata {
     fn eq(&self, other: &Self) -> bool {
         self.player_id == other.player_id
@@ -55,13 +58,13 @@ impl Hash for PlayerMetadata {
 // Define an error type for errors that occur when the creator is instantiated
 #[derive(Debug, Clone)]
 pub enum PlayerError {
-    DoesNotExist
+    DoesNotExist,
 }
 
 impl fmt::Display for PlayerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::DoesNotExist => write!(f, "The player does not exist.")
-        }   
+            Self::DoesNotExist => write!(f, "The player does not exist."),
+        }
     }
 }

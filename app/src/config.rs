@@ -2,10 +2,10 @@
 
 pub enum AppEnvironment {
     Local,
-    Prod
+    Prod,
 }
 
 pub struct AppConfig {
     api_url: String,
-    env: AppEnvironment
+    env: AppEnvironment,
 }

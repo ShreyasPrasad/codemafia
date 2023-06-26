@@ -1,22 +1,18 @@
-use std::fmt;
-use serde::Serialize;
 use crate::messages::game::Team;
+use serde::Serialize;
+use std::fmt;
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize)]
 pub struct CodeMafiaRole {
     pub role_title: Option<CodeMafiaRoleTitle>,
-    pub team: Team
+    pub team: Team,
 }
 
 impl CodeMafiaRole {
     pub fn get_role_str(&self) -> String {
         match &self.role_title {
-            Some(title) => {
-                title.to_string() + &self.team.to_string()
-            },
-            None => {
-                self.team.to_string()
-            }
+            Some(title) => title.to_string() + &self.team.to_string(),
+            None => self.team.to_string(),
         }
     }
 }
@@ -31,5 +27,5 @@ impl fmt::Display for CodeMafiaRoleTitle {
 pub enum CodeMafiaRoleTitle {
     SpyMaster,
     Undercover,
-    Ally
+    Ally,
 }

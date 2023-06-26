@@ -9,24 +9,24 @@ pub const NUM_BLACK_WORDS: usize = 1;
 pub enum WordType {
     Black,
     Normal,
-    Blue, 
-    Red
+    Blue,
+    Red,
 }
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Word {
     pub text: String,
     pub word_type: WordType,
-    pub clicked: bool
+    pub clicked: bool,
 }
 
 #[derive(Debug)]
 pub struct Board {
-    pub words: Vec<Word>
+    pub words: Vec<Word>,
 }
 
 /* The complete definition of a codenames game, accessible to callers, such as the gameserver. */
 #[derive(Debug)]
 pub struct Game {
-    pub board: Board
+    pub board: Board,
 }

@@ -1,10 +1,22 @@
 repos:
 -   repo: local
     hooks:
-    - id: fmt-check-and-lint
-      name: fmt
-      description: Format files with cargo fmt.
+    - id: codemafia
+      name: codemafia-fmt-check
+      description: Format files with cargo fmt and perform a cargo check.
       entry: bash -c 'cd codemafia && cargo fmt && cargo check'
+      language: system
+      pass_filenames: false
+    - id: shared
+      name: shared-fmt-check
+      description: Format files with cargo fmt and perform a cargo check.
+      entry: bash -c 'cd shared && cargo fmt && cargo check'
+      language: system
+      pass_filenames: false
+    - id: app
+      name: app-fmt-check
+      description: Format files with cargo fmt and perform a cargo check.
+      entry: bash -c 'cd app && cargo fmt && cargo check'
       language: system
       pass_filenames: false
     

@@ -6,7 +6,7 @@ use serde::Serialize;
 #[derive(Debug, Clone, Serialize)]
 pub enum RoomEvents {
     RoomState(RoomState),
-    GameStarted
+    GameStarted,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -14,13 +14,13 @@ pub struct PlayerOnTeam {
     pub name: String,
     pub id: String,
     pub team: Team,
-    pub is_spymaster: bool
+    pub is_spymaster: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct You {
     pub name: Option<String>, /* player_name */
-    pub id: String /* player_id as str */
+    pub id: String,           /* player_id as str */
 }
 
 #[derive(Debug, Clone, Serialize)]
