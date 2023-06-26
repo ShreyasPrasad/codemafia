@@ -14,4 +14,3 @@ yew = { version="0.20", features=["csr"] }
 yew-router = "0.17"
 patternfly-yew = { version = "0.4.1", features = ["icons-fab", "tree"] }
 chrono = { version = "0.4", features = ["wasmbind"] }
-codemafia = { path = "../codemafia" }

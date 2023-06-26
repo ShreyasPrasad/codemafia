@@ -1,7 +1,10 @@
 repos:
-  - repo: https://github.com/doublify/pre-commit-rust
-    rev: master
+-   repo: local
     hooks:
-      - id: fmt
-      - id: clippy
-      - id: cargo-check
+    - id: fmt-check-and-lint
+      name: fmt
+      description: Format files with cargo fmt.
+      entry: bash -c 'cd codemafia && cargo fmt && cargo check'
+      language: system
+      pass_filenames: false
+    

@@ -2,8 +2,7 @@ use yew::prelude::*;
 use patternfly_yew::*;
 
 use crate::components::layoutitem::LayoutItem;
-
-use codemafia::events::game::RoomCode;
+//use codemafia::events::game::RoomCode;
 
 #[function_component(Landing)]
 pub fn landing() -> Html {
@@ -23,7 +22,8 @@ pub fn landing() -> Html {
     }
 }
 
+/*
 pub fn get_new_room_code() -> RoomCode {
     todo!()
 }
-
+*/
