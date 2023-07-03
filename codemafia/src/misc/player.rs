@@ -13,7 +13,7 @@ pub struct ActivePlayer {
 }
 
 pub struct PlayerConnection {
-    /* the player's connection status. */
+    /* The player's connection status. */
     pub status: PlayerStatus,
     /* The channel used to communicate with the player's websocket sender. */
     pub event_sender: EventSender,

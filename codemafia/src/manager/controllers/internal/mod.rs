@@ -72,6 +72,6 @@ impl InternalController {
             }
         }
         /* Update the players after all the actions above. */
-        dispatch_room_state_update(&self.event_sender, self.players.clone());
+        dispatch_room_state_update(&self.event_sender, self.players.clone()).await;
     }
 }

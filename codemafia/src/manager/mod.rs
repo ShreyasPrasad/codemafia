@@ -17,7 +17,7 @@ use std::{
 
 pub mod bridge;
 pub mod controllers;
-pub mod dispatcher;
+pub mod dispatchers;
 pub mod room;
 
 use crate::{

@@ -15,7 +15,9 @@ use std::sync::{Arc, Mutex};
 
 use super::controllers::internal::{InternalController, InternalSender, INTERNAL_MSPC_BUFFER_SIZE};
 use super::controllers::shared::SharedController;
-use super::dispatcher::EventDispatcher;
+use super::dispatchers::cache::CachedEventDispatcher;
+use super::dispatchers::default::DefaultEventDispatcher;
+use super::dispatchers::EventDispatcher;
 use dashmap::DashMap;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
@@ -37,21 +39,28 @@ pub struct Room {
 impl Room {
     /* Initialization of a new room; starts the room, so players can now send messages to be processed. */
     pub fn new(game_creator: Arc<Mutex<Creator>>) -> Self {
-        let shared_sender = Self::start_shared_task(game_creator);
-        let internal_sender = Self::start_internal_task();
+        let players: Arc<DashMap<PlayerId, ActivePlayer>> = Arc::new(DashMap::new());
+        let shared_sender = Self::start_shared_task(game_creator, players.clone());
+        let internal_sender = Self::start_internal_task(players.clone());
         Room {
             shared_sender,
             internal_sender,
         }
     }
 
-    fn start_shared_task(game_creator: Arc<Mutex<Creator>>) -> MessageSender {
+    fn start_shared_task(
+        game_creator: Arc<Mutex<Creator>>,
+        players_for_task: Arc<DashMap<PlayerId, ActivePlayer>>,
+    ) -> MessageSender {
         let (tx, mut rx) = mpsc::channel::<Message>(ROOM_MSPC_BUFFER_SIZE);
         tokio::spawn(async move {
-            let players: Arc<DashMap<PlayerId, ActivePlayer>> = Arc::new(DashMap::new());
-            let dispatcher: EventDispatcher = EventDispatcher::new(players.clone());
-            let mut controller: SharedController =
-                SharedController::new(players.clone(), game_creator, dispatcher.get_event_sender());
+            let dispatcher: CachedEventDispatcher =
+                CachedEventDispatcher::new(players_for_task.clone());
+            let mut controller: SharedController = SharedController::new(
+                players_for_task,
+                game_creator,
+                dispatcher.get_event_sender(),
+            );
 
             while let Some(message) = rx.recv().await {
                 controller.handle_message(message).await;
@@ -60,13 +69,15 @@ impl Room {
         tx
     }
 
-    fn start_internal_task() -> InternalSender {
+    fn start_internal_task(
+        players_for_task: Arc<DashMap<PlayerId, ActivePlayer>>,
+    ) -> InternalSender {
         let (tx, mut rx) = mpsc::channel::<InternalMessage>(INTERNAL_MSPC_BUFFER_SIZE);
         tokio::spawn(async move {
-            let players: Arc<DashMap<PlayerId, ActivePlayer>> = Arc::new(DashMap::new());
-            let dispatcher: EventDispatcher = EventDispatcher::new(players.clone());
+            let dispatcher: DefaultEventDispatcher =
+                DefaultEventDispatcher::new(players_for_task.clone());
             let mut controller: InternalController =
-                InternalController::new(players, dispatcher.get_event_sender());
+                InternalController::new(players_for_task, dispatcher.get_event_sender());
             while let Some(message) = rx.recv().await {
                 controller.handle_message(message).await;
             }

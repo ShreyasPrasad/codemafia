@@ -1,7 +1,0 @@
-- id: fmt-check-and-lint
-  name: fmt
-  description: Format files with cargo fmt.
-  entry: bash -c 'cd codemafia && cargo fmt && cargo check '
-  language: system
-  pass_filenames: false
-    
