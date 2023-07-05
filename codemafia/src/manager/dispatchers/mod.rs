@@ -9,21 +9,28 @@ use crate::misc::{
 };
 use shared::{events::EventContent, player::PlayerId};
 
+use self::info::DispatcherInfo;
+
 pub mod cache;
 pub mod default;
+pub mod info;
 
 pub trait EventDispatcher {
     fn new(players: Arc<DashMap<PlayerId, ActivePlayer>>) -> Self;
     fn get_event_sender(&self) -> Sender<Event>;
 
     /* This method sends the event to the included recipient (1 or more players). */
-    fn dispatch_event(players_clone: Arc<DashMap<PlayerId, ActivePlayer>>, event: Event) {
-        match event.recipient {
+    fn dispatch_event(
+        players_clone: Arc<DashMap<PlayerId, ActivePlayer>>,
+        info: impl DispatcherInfo,
+    ) {
+        let event_content = info.event_content();
+        match info.recipient() {
             Recipient::All => {
                 /* Todo: parallelize event sending by assigning each event send to a new Tokio task. */
                 tokio::spawn(async move {
                     for p_ref in players_clone.iter() {
-                        dispatch_event_to_player(p_ref.value(), event.content.clone()).await;
+                        dispatch_event_to_player(p_ref.value(), event_content.clone()).await;
                     }
                 });
             }
@@ -32,7 +39,7 @@ pub trait EventDispatcher {
                     for p_ref in players_clone.iter() {
                         if let Some(player_role) = &p_ref.meta.role {
                             if roles.contains(&player_role) {
-                                dispatch_event_to_player(p_ref.value(), event.content.clone())
+                                dispatch_event_to_player(p_ref.value(), event_content.clone())
                                     .await;
                             }
                         }
@@ -43,7 +50,7 @@ pub trait EventDispatcher {
                 tokio::spawn(async move {
                     for p_ref in players_clone.iter() {
                         if players_by_id.contains(&p_ref.meta.player_id) {
-                            dispatch_event_to_player(p_ref.value(), event.content.clone()).await;
+                            dispatch_event_to_player(p_ref.value(), event_content.clone()).await;
                         }
                     }
                 });

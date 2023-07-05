@@ -17,6 +17,7 @@ use self::role::CodeMafiaRole;
 /* Convenient alias for the player ID. */
 pub type PlayerId = Uuid;
 
+#[derive(Debug, Clone)]
 pub struct PlayerMetadata {
     /* The player's unique ID. */
     pub player_id: PlayerId,

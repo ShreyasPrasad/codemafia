@@ -24,6 +24,7 @@ pub enum Recipient {
     All,
 }
 
+/* Function that determines if the given event is meant to be received by the player with the given metadata. */
 pub fn is_event_for_player_with_role(event: &Event, player_meta: &PlayerMetadata) -> bool {
     match &event.recipient {
         Recipient::All => true,

@@ -2,13 +2,13 @@
 use std::sync::Arc;
 
 use dashmap::DashMap;
-use shared::{events::room::You, player::PlayerId};
+use shared::player::{PlayerId, PlayerMetadata};
 use tokio::sync::mpsc::Sender;
 
 use crate::misc::{
     events::{Event, SEND_ERROR_MSG},
     internal::InternalMessage,
-    player::ActivePlayer,
+    player::{ActivePlayer, PlayerStatus},
 };
 
 use super::util::dispatch_room_state_update;
@@ -41,23 +41,23 @@ impl InternalController {
 
     pub async fn handle_message(&mut self, message: InternalMessage) {
         match message {
-            InternalMessage::NewPlayer(player_name, event_sender) => {
-                let player: ActivePlayer = self.create_player(player_name, event_sender);
+            InternalMessage::NewPlayer(player_name, event_sender, player_meta_receiver) => {
+                let player_meta: PlayerMetadata = self.create_player(player_name, event_sender);
                 /* Set the player cookie. */
-                self.set_player_cookie(player.meta.player_id).await;
+                self.set_player_cookie(player_meta.player_id).await;
+                player_meta_receiver
+                    .send(Some(player_meta))
+                    .expect(SEND_ERROR_MSG);
             }
-            InternalMessage::SessionConnection(player_id, you_receiver) => {
+            InternalMessage::SessionConnection(player_id, player_meta_receiver) => {
                 match self.players.get(&player_id) {
                     Some(player) => {
-                        you_receiver
-                            .send(Some(You {
-                                name: player.meta.name.clone(),
-                                id: player.meta.player_id.to_string(),
-                            }))
+                        player_meta_receiver
+                            .send(Some(player.meta.clone()))
                             .expect(SEND_ERROR_MSG);
                     }
                     None => {
-                        you_receiver.send(None).expect(SEND_ERROR_MSG);
+                        player_meta_receiver.send(None).expect(SEND_ERROR_MSG);
                     }
                 }
                 /* Set the player cookie. */
@@ -69,6 +69,14 @@ impl InternalController {
                 }
                 /* Set the player cookie. */
                 self.set_player_cookie(player_id).await;
+            }
+            InternalMessage::PlayerDisconnected(player_id) => {
+                self.set_player_connection_status(player_id, PlayerStatus::Disconnected)
+                    .await;
+            }
+            InternalMessage::PlayerReconnected(player_id) => {
+                self.set_player_connection_status(player_id, PlayerStatus::Connected)
+                    .await;
             }
         }
         /* Update the players after all the actions above. */

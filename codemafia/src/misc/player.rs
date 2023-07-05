@@ -22,7 +22,6 @@ pub struct PlayerConnection {
 pub enum PlayerStatus {
     Connected,
     Disconnected,
-    Abandoned,
 }
 
 impl ActivePlayer {

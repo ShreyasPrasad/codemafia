@@ -9,8 +9,8 @@ use axum::{
 
 use axum_extra::extract::cookie::CookieJar;
 use shared::{
-    events::{game::RoomCode, room::You, EventContent},
-    player::PlayerId,
+    events::{game::RoomCode, EventContent},
+    player::{PlayerId, PlayerMetadata},
 };
 use tokio::sync::{mpsc, oneshot};
 
@@ -52,8 +52,7 @@ pub async fn session_route_handler(
                 Some(handles) => {
                     let player_id_uuid = PlayerId::from_str(&player_id).unwrap();
                     match check_if_player_exists_in_room(&handles.1, player_id_uuid).await {
-                        /* We might do something with you later. */
-                        Some(_you) => ws.on_upgrade(move |socket| {
+                        Some(..) => ws.on_upgrade(move |socket| {
                             handle_socket(socket, addr, handles, player_id_uuid)
                         }),
                         None => (StatusCode::NOT_FOUND, "Player not found.").into_response(),
@@ -69,15 +68,15 @@ pub async fn session_route_handler(
 async fn check_if_player_exists_in_room(
     room_sender: &InternalSender,
     player_id: PlayerId,
-) -> Option<You> {
-    let (tx, rx) = oneshot::channel::<Option<You>>();
+) -> Option<PlayerMetadata> {
+    let (tx, rx) = oneshot::channel::<Option<PlayerMetadata>>();
     let message_send = room_sender
         .send(InternalMessage::SessionConnection(player_id, tx))
         .await;
 
     match message_send {
         Ok(..) => match rx.await {
-            Ok(you) => you,
+            Ok(player_meta) => player_meta,
             Err(err) => {
                 println!("Oneshot channel was cancelled: {}", err);
                 None
@@ -103,5 +102,5 @@ async fn handle_socket(
         .send(InternalMessage::UpdatePlayer(player_id, tx))
         .await;
 
-    init_socket(socket, who, handles.0, rx, player_creation_result).await;
+    init_socket(socket, who, handles, rx, player_creation_result, player_id).await;
 }

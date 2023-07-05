@@ -1,9 +1,9 @@
-use crate::misc::player::ActivePlayer;
+use crate::misc::player::{ActivePlayer, PlayerStatus};
 
 use crate::misc::events::{Event, Recipient, SEND_ERROR_MSG};
 use shared::events::player::PlayerEvents;
 use shared::events::EventContent;
-use shared::player::{PlayerError, PlayerId};
+use shared::player::{PlayerError, PlayerId, PlayerMetadata};
 use tokio::sync::mpsc::Sender;
 
 use super::InternalController;
@@ -14,13 +14,16 @@ impl InternalController {
         &mut self,
         player_name: String,
         event_sender: Sender<EventContent>,
-    ) -> ActivePlayer {
+    ) -> PlayerMetadata {
         let new_player = ActivePlayer::new(player_name, event_sender);
         /* Assign the owner. */
         if self.players.is_empty() {
             self.owner = Some(new_player.meta.player_id);
         }
-        new_player
+        /* Add the player to the list of active players. */
+        let player_meta = new_player.meta.clone();
+        self.players.insert(new_player.meta.player_id, new_player);
+        player_meta
     }
 
     pub fn update_player_connection(
@@ -47,5 +50,16 @@ impl InternalController {
             })
             .await
             .expect(SEND_ERROR_MSG);
+    }
+
+    pub async fn set_player_connection_status(
+        &self,
+        player_id: PlayerId,
+        player_status: PlayerStatus,
+    ) {
+        let player_option = self.players.get_mut(&player_id);
+        if let Some(mut player) = player_option {
+            player.connection.status = player_status;
+        }
     }
 }

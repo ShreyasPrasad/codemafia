@@ -18,12 +18,6 @@ pub struct PlayerOnTeam {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct You {
-    pub name: Option<String>, /* player_name */
-    pub id: String,           /* player_id as str */
-}
-
-#[derive(Debug, Clone, Serialize)]
 pub struct RoomState {
     /* The active players in the room, including you. */
     pub players: Vec<PlayerOnTeam>,

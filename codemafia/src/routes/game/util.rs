@@ -6,16 +6,17 @@ use shared::{
         EventContent,
     },
     messages::Message,
+    player::PlayerId,
 };
 //allows to split the websocket stream into separate TX and RX branches
 use futures::{stream::StreamExt, SinkExt};
 use tokio::sync::mpsc::{error::SendError, Receiver};
 
-use std::{net::SocketAddr, sync::Arc};
+use std::{error::Error, net::SocketAddr, sync::Arc};
 
 use crate::{
     manager::{controllers::internal::InternalSender, room::MessageSender},
-    misc::internal::InternalMessage,
+    misc::{events::SEND_ERROR_MSG, internal::InternalMessage},
     routes::AppState,
 };
 
@@ -46,7 +47,9 @@ pub fn get_handles(
 pub async fn spawn_game_connection(
     socket: WebSocket,
     who: SocketAddr,
-    event_sender: MessageSender,
+    player_id: PlayerId,
+    message_sender: MessageSender,
+    internal_sender: InternalSender,
     mut rx: Receiver<EventContent>,
 ) {
     // By splitting socket we can send and receive at the same time. In this example we will send
@@ -84,7 +87,7 @@ pub async fn spawn_game_connection(
         cnt
     });
 
-    // This second task will receive messages from client and print them on server console
+    // This second task will receive messages from the client
     let mut recv_task = tokio::spawn(async move {
         let mut cnt = 0;
         while let Some(Ok(msg)) = receiver.next().await {
@@ -94,7 +97,7 @@ pub async fn spawn_game_connection(
                     cnt = cnt + 1;
                     match serde_json::from_str::<Message>(msg_text) {
                         Ok(msg_struct) => {
-                            if let Err(err) = event_sender.send(msg_struct).await {
+                            if let Err(err) = message_sender.send(msg_struct).await {
                                 println!("Error sending client message to room: {}", err);
                             }
                         }
@@ -112,7 +115,6 @@ pub async fn spawn_game_connection(
                 }
             }
         }
-        /* if the socket is closed, mark the player as disconnected. */
         cnt
     });
 
@@ -124,6 +126,7 @@ pub async fn spawn_game_connection(
                 Err(a) => println!("Error sending messages {:?}", a)
             }
             recv_task.abort();
+            mark_player_as_disconnected(player_id, internal_sender).await;
         },
         rv_b = (&mut recv_task) => {
             match rv_b {
@@ -131,6 +134,7 @@ pub async fn spawn_game_connection(
                 Err(b) => println!("Error receiving messages {:?}", b)
             }
             send_task.abort();
+            mark_player_as_disconnected(player_id, internal_sender).await;
         }
     }
 
@@ -142,16 +146,40 @@ pub async fn spawn_game_connection(
 pub async fn init_socket(
     socket: WebSocket,
     who: SocketAddr,
-    msg_sender: MessageSender,
+    handles: (MessageSender, InternalSender),
     rx: Receiver<EventContent>,
     create_result: Result<(), SendError<InternalMessage>>,
+    player_id: PlayerId,
 ) {
     if let Err(err) = create_result {
-        println!("Error creating player: {}. Closing socket.", err);
-        if let Err(s_err) = socket.close().await {
-            println!("Error closing socket: {}", s_err);
-        }
+        close_socket_after_unrecoverable_error(socket, err.into()).await;
     } else {
-        spawn_game_connection(socket, who, msg_sender, rx).await;
+        spawn_game_connection(socket, who, player_id, handles.0, handles.1, rx).await;
     }
+}
+
+pub async fn close_socket_after_unrecoverable_error(
+    socket: WebSocket,
+    err: Box<dyn Error + Send + Sync>,
+) {
+    println!("Error creating player: {}. Closing socket.", err);
+    if let Err(s_err) = socket.close().await {
+        println!("Error closing socket: {}", s_err);
+    }
+}
+
+/* Sends an internal message to mark a player as disconnected. */
+async fn mark_player_as_disconnected(player_id: PlayerId, internal_sender: InternalSender) {
+    internal_sender
+        .send(InternalMessage::PlayerDisconnected(player_id))
+        .await
+        .expect(SEND_ERROR_MSG)
+}
+
+/* Sends an internal message to mark a player as connected, if they were previously disconnected. */
+async fn mark_player_as_connected(player_id: PlayerId, internal_sender: InternalSender) {
+    internal_sender
+        .send(InternalMessage::PlayerReconnected(player_id))
+        .await
+        .expect(SEND_ERROR_MSG)
 }

@@ -6,4 +6,5 @@
 pub mod elements;
 pub mod events;
 pub mod messages;
+pub mod misc;
 pub mod player;

@@ -23,6 +23,7 @@ pub enum GameEvents {
     ),
     Turn(TeamTurn),
     GameEnded(GameOutcome),
+    CurrentState(CurrentState),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -53,6 +54,12 @@ pub enum WinCondition {
     BlackWordSelected,
     WordsCompleted,
     UndercoverOperativeGuessed,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CurrentState {
+    turn: TeamTurn,
+    board: OpaqueBoard,
 }
 
 // Create a convenience aliasing type
