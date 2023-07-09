@@ -158,6 +158,7 @@ pub async fn init_socket(
     }
 }
 
+/* Function to close the given socket and log the causing error. */
 pub async fn close_socket_after_unrecoverable_error(
     socket: WebSocket,
     err: Box<dyn Error + Send + Sync>,
@@ -172,14 +173,6 @@ pub async fn close_socket_after_unrecoverable_error(
 async fn mark_player_as_disconnected(player_id: PlayerId, internal_sender: InternalSender) {
     internal_sender
         .send(InternalMessage::PlayerDisconnected(player_id))
-        .await
-        .expect(SEND_ERROR_MSG)
-}
-
-/* Sends an internal message to mark a player as connected, if they were previously disconnected. */
-async fn mark_player_as_connected(player_id: PlayerId, internal_sender: InternalSender) {
-    internal_sender
-        .send(InternalMessage::PlayerReconnected(player_id))
         .await
         .expect(SEND_ERROR_MSG)
 }

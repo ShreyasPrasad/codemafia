@@ -56,14 +56,6 @@ impl RoomManager {
         self.rooms.remove(&room_code);
     }
 
-    /* Invoked to obtain the shared sender for a particular game room; returns None if the room doesn't exist. */
-    pub fn get_shared_sender(&self, room_code: RoomCode) -> Option<MessageSender> {
-        match self.rooms.get(&room_code) {
-            Some(room) => Some(room.get_shared_sender()),
-            None => None,
-        }
-    }
-
     /* Invoked to obtain the shared and internal sender for a particular game room; returns None if the room doesn't exist. */
     pub fn get_handles(&self, room_code: RoomCode) -> Option<(MessageSender, InternalSender)> {
         match self.rooms.get(&room_code) {

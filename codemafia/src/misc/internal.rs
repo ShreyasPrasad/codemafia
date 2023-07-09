@@ -19,7 +19,6 @@ pub enum InternalMessage {
     ),
     UpdatePlayer(PlayerId, Sender<EventContent>),
     PlayerDisconnected(PlayerId), /* Message received when a player that is currently connected, disconnects. */
-    PlayerReconnected(PlayerId), /* Message received when a player that is currently disconnected, reconnects. */
 }
 
 /* Type used for situations where an active player has not yet been associated with an incoming connection,

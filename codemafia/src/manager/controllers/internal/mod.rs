@@ -5,10 +5,13 @@ use dashmap::DashMap;
 use shared::player::{PlayerId, PlayerMetadata};
 use tokio::sync::mpsc::Sender;
 
-use crate::misc::{
-    events::{Event, SEND_ERROR_MSG},
-    internal::InternalMessage,
-    player::{ActivePlayer, PlayerStatus},
+use crate::{
+    manager::dispatchers::{default::DefaultEventDispatcher, EventDispatcher},
+    misc::{
+        events::{Event, SEND_ERROR_MSG},
+        internal::InternalMessage,
+        player::{ActivePlayer, PlayerStatus},
+    },
 };
 
 use super::util::dispatch_room_state_update;
@@ -25,16 +28,23 @@ pub struct InternalController {
     /* A reference to the list of active players. */
     players: Arc<DashMap<PlayerId, ActivePlayer>>,
     /* The event dispatcher, responsible for forwarding events to players. */
+    dispatcher: DefaultEventDispatcher,
+    /* The event sender, obtained from the dispatcher. */
     event_sender: Sender<Event>,
     /* The first player to join the room is assigned owner and is responsible for starting the game. */
     owner: Option<PlayerId>,
 }
 
 impl InternalController {
-    pub fn new(players: Arc<DashMap<PlayerId, ActivePlayer>>, event_sender: Sender<Event>) -> Self {
+    pub fn new(
+        players: Arc<DashMap<PlayerId, ActivePlayer>>,
+        dispatcher: DefaultEventDispatcher,
+    ) -> Self {
+        let event_sender = dispatcher.get_event_sender();
         InternalController {
             players,
             owner: None,
+            dispatcher,
             event_sender,
         }
     }
@@ -69,13 +79,12 @@ impl InternalController {
                 }
                 /* Set the player cookie. */
                 self.set_player_cookie(player_id).await;
+                /* Mark the player as connected. */
+                self.set_player_connection_status(player_id, PlayerStatus::Connected)
+                    .await;
             }
             InternalMessage::PlayerDisconnected(player_id) => {
                 self.set_player_connection_status(player_id, PlayerStatus::Disconnected)
-                    .await;
-            }
-            InternalMessage::PlayerReconnected(player_id) => {
-                self.set_player_connection_status(player_id, PlayerStatus::Connected)
                     .await;
             }
         }

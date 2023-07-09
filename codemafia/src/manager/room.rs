@@ -56,11 +56,8 @@ impl Room {
         tokio::spawn(async move {
             let dispatcher: CachedEventDispatcher =
                 CachedEventDispatcher::new(players_for_task.clone());
-            let mut controller: SharedController = SharedController::new(
-                players_for_task,
-                game_creator,
-                dispatcher.get_event_sender(),
-            );
+            let mut controller: SharedController =
+                SharedController::new(players_for_task, game_creator, dispatcher);
 
             while let Some(message) = rx.recv().await {
                 controller.handle_message(message).await;
@@ -77,7 +74,7 @@ impl Room {
             let dispatcher: DefaultEventDispatcher =
                 DefaultEventDispatcher::new(players_for_task.clone());
             let mut controller: InternalController =
-                InternalController::new(players_for_task, dispatcher.get_event_sender());
+                InternalController::new(players_for_task, dispatcher);
             while let Some(message) = rx.recv().await {
                 controller.handle_message(message).await;
             }

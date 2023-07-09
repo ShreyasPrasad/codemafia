@@ -3,6 +3,8 @@ use std::sync::{Arc, Mutex};
 use crate::creator::Creator;
 use crate::game::GameServer;
 use crate::manager::bridge::RoomToGameBridge;
+use crate::manager::dispatchers::cache::CachedEventDispatcher;
+use crate::manager::dispatchers::EventDispatcher;
 use crate::misc::events::{Event, Recipient, SEND_ERROR_MSG};
 use crate::misc::player::ActivePlayer;
 use shared::elements::Game;
@@ -37,6 +39,8 @@ pub struct SharedController {
     /* The shared game creator. */
     game_creator: Arc<Mutex<Creator>>,
     /* The event dispatcher, responsible for forwarding events to players. */
+    dispatcher: CachedEventDispatcher,
+    /* The event sender, obtained from the dispatcher. */
     event_sender: Sender<Event>,
 }
 
@@ -44,12 +48,14 @@ impl SharedController {
     pub fn new(
         players: Arc<DashMap<PlayerId, ActivePlayer>>,
         game_creator: Arc<Mutex<Creator>>,
-        event_sender: Sender<Event>,
+        dispatcher: CachedEventDispatcher,
     ) -> Self {
+        let event_sender = dispatcher.get_event_sender();
         SharedController {
             players,
             active_game: None,
             game_creator,
+            dispatcher,
             event_sender,
         }
     }

@@ -16,7 +16,7 @@ impl InternalController {
         event_sender: Sender<EventContent>,
     ) -> PlayerMetadata {
         let new_player = ActivePlayer::new(player_name, event_sender);
-        /* Assign the owner. */
+        /* Assign the owner; it is the first player in the room. */
         if self.players.is_empty() {
             self.owner = Some(new_player.meta.player_id);
         }

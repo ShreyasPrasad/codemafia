@@ -15,6 +15,7 @@ use crate::misc::{
     player::ActivePlayer,
 };
 
+/* Sends all the players the updated room state. */
 pub async fn dispatch_room_state_update(
     event_sender: &Sender<Event>,
     players: Arc<DashMap<PlayerId, ActivePlayer>>,

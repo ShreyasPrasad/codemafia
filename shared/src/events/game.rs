@@ -1,7 +1,12 @@
 /* Defines the content of a game event.  */
 
-use crate::{elements::WordType, messages::game::Team, player::role::CodeMafiaRoleTitle};
+use crate::{
+    elements::WordType, messages::game::Team, misc::sequenced::Sequenced,
+    player::role::CodeMafiaRoleTitle,
+};
 use serde::Serialize;
+
+use super::EventContent;
 
 #[derive(Debug, Clone, Serialize)]
 pub enum GameEvents {
@@ -23,7 +28,8 @@ pub enum GameEvents {
     ),
     Turn(TeamTurn),
     GameEnded(GameOutcome),
-    CurrentState(CurrentState),
+    /* Sent to a player reconnecting to the game, allowing them to populate the current game state. */
+    GameState(Vec<Sequenced<EventContent>>, CurrentState),
 }
 
 #[derive(Debug, Clone, Serialize)]

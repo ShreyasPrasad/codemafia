@@ -75,6 +75,7 @@ impl GameServer {
                     let fut = |id| self.handle_word_hint(id, hint.clone());
                     Self::proceed_with_valid_player_id(player_id, fut).await;
                 }
+                GameMessageAction::CurrentState(player_id) => {}
             }
         }
     }

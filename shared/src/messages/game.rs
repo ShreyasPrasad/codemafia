@@ -26,6 +26,11 @@ pub enum GameMessageAction {
         String, /* The word hint provided by the Spymaster at the start of their turn. */
     ),
     EndTurn, /* Done by the coodinator for the current turn. */
+    /* Sent by the client to retrieve the current game state. */
+    CurrentState(
+        String,
+        /* The ID of the player suggesting the word. */
+    ),
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]
