@@ -10,12 +10,15 @@ pub fn landing() -> Html {
         <Stack>
             <StackItem>
                 <LayoutItem>
-                    <h1 class="landingtitle">{"codemafia"}</h1>
+                    <h1 class="landingtitle">
+                        <span class="code">{"code"}</span>
+                        <span class="mafia">{"mafia"}</span>
+                    </h1>
                 </LayoutItem>
             </StackItem>
             <StackItem>
                 <LayoutItem>
-                    <Button variant={ButtonVariant::Primary}>{ "Create Game" }</Button>{" "}
+                    <Button class="create" variant={ButtonVariant::Primary}>{ "Create Game" }</Button>{" "}
                 </LayoutItem>
             </StackItem>
         </Stack>

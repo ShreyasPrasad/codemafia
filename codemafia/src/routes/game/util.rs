@@ -60,8 +60,7 @@ pub async fn spawn_game_connection(
     let mut send_task = tokio::spawn(async move {
         let mut cnt = 0;
         loop {
-            /* Use a blocking recv here to avoid cluttering Tokio runtime scheduler with too many idle listeners. */
-            let event_content = rx.blocking_recv();
+            let event_content = rx.recv().await;
             match event_content {
                 Some(content) => {
                     match serde_json::to_string(&content) {
