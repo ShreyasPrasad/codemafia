@@ -2,7 +2,7 @@
 FROM rust:latest
 
 # 1. Create a new empty shell project
-WORKDIR /projectroot
+WORKDIR /base
 
 # 2. Copy the server manifests
 RUN USER=root cargo new --bin codemafia
@@ -23,6 +23,7 @@ COPY ./codemafia/src ./codemafia/src
 
 # 5. Build for release.
 RUN rm ./codemafia/target/release/deps/codemafia*
-RUN cd codemafia && cargo install --path .
 
-CMD ["codemafia"]
+# 6. Run the application.
+WORKDIR /base/codemafia
+CMD ["cargo", "run", "--release", "--", "--words", "/base/codemafia/src/creator/wordlist"]

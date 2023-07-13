@@ -1,0 +1,6 @@
+# This is used for local development only. The corresponding Dockerfile is used in production with different environment variables.
+services:
+  server:
+    build: .
+    ports:
+      - "3000:3000"
